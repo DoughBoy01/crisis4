@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DevControlsPanel from './DevControlsPanel';
+import AgentRunHistory from './AgentRunHistory';
+import DailyBriefPreview from './DailyBriefPreview';
 
 interface ServiceResult {
   id: string;
@@ -436,6 +438,16 @@ export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps
             </div>
           </div>
         )}
+
+        {/* Agent run history */}
+        <div className="mt-8">
+          <AgentRunHistory />
+        </div>
+
+        {/* Daily brief preview */}
+        <div className="mt-8 pb-8">
+          <DailyBriefPreview />
+        </div>
 
       </div>
     </div>
