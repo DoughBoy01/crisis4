@@ -9,7 +9,7 @@ function App() {
   const [view, setView] = useState<View>('home');
 
   if (view === 'diagnostics') {
-    return <DiagnosticsPage onBack={() => setView('dashboard')} />;
+    return <DiagnosticsPage onBack={() => setView('dashboard')} onHome={() => setView('home')} />;
   }
 
   if (view === 'dashboard') {

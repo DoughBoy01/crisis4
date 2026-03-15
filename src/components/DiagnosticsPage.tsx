@@ -54,9 +54,10 @@ const INITIAL_SERVICES: ServiceResult[] = [
 
 interface DiagnosticsPageProps {
   onBack: () => void;
+  onHome: () => void;
 }
 
-export default function DiagnosticsPage({ onBack }: DiagnosticsPageProps) {
+export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps) {
   const [services, setServices] = useState<ServiceResult[]>(INITIAL_SERVICES);
   const [running, setRunning] = useState(false);
   const [startedAt, setStartedAt] = useState<string | null>(null);
@@ -294,13 +295,22 @@ export default function DiagnosticsPage({ onBack }: DiagnosticsPageProps) {
 
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-slate-400 hover:text-slate-200 text-sm mb-6 transition-colors group"
-          >
-            <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-            Back to Dashboard
-          </button>
+          <div className="flex items-center gap-4 mb-6">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 text-slate-400 hover:text-slate-200 text-sm transition-colors group"
+            >
+              <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+              Back to Dashboard
+            </button>
+            <span className="text-slate-700">·</span>
+            <button
+              onClick={onHome}
+              className="flex items-center gap-2 text-slate-400 hover:text-slate-200 text-sm transition-colors"
+            >
+              Home
+            </button>
+          </div>
 
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
