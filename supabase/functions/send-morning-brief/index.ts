@@ -69,7 +69,9 @@ function buildHtmlEmail(brief: DailyBrief, recipientName: string, unsubscribeTok
         agricultural: "Agricultural",
         freight: "Freight",
         fertilizer: "Fertilizers",
+        metals: "Metals",
         fx: "FX / GBP",
+        policy: "Policy / Macro",
       };
       return `
         <tr>
@@ -218,8 +220,17 @@ function buildTextEmail(brief: DailyBrief, recipientName: string): string {
     lines.push("");
     lines.push("SECTOR INTELLIGENCE");
     lines.push("-".repeat(30));
+    const sectorLabel: Record<string, string> = {
+      energy: "ENERGY",
+      agricultural: "AGRICULTURAL",
+      freight: "FREIGHT",
+      fertilizer: "FERTILIZERS",
+      metals: "METALS",
+      fx: "FX / GBP",
+      policy: "POLICY / MACRO",
+    };
     for (const [sector, rationale] of Object.entries(brief.action_rationale)) {
-      if (rationale) lines.push(`${sector.toUpperCase()}: ${rationale}`);
+      if (rationale) lines.push(`${sectorLabel[sector] ?? sector.toUpperCase()}: ${rationale}`);
     }
   }
   lines.push("");
