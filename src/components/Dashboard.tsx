@@ -153,7 +153,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
   const [newsOpen, setNewsOpen] = useState(false);
   const [marketsOpen, setMarketsOpen] = useState(true);
   const [shippingOpen, setShippingOpen] = useState(true);
-  const [timelineOpen, setTimelineOpen] = useState(true);
+  const [timelineOpen, setTimelineOpen] = useState(activePersona !== 'general');
   const [correlationOpen, setCorrelationOpen] = useState(false);
   const { settings, updateTimezone } = useUserSettings();
   const timezone = settings.timezone;
@@ -336,6 +336,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
         fxRates={liveFxRates}
         overallAccuracy={feeds?.overall_accuracy_score ?? null}
         feedsLoading={feedsLoading}
+        secondsSinceRefresh={secondsSinceRefresh}
         timezone={timezone}
         onTimezoneChange={updateTimezone}
         onOpenDiagnostics={onOpenDiagnostics}
@@ -532,6 +533,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
                       description={cat.description}
                       items={marketItems.filter(i => i.category === cat.id)}
                       activeSector={activeSector}
+                      timezone={timezone}
                     />
                   ))}
                 </div>
@@ -602,7 +604,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
                   ) : null
                 }
               >
-                <CrisisTimeline feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} />
+                <CrisisTimeline feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} timezone={timezone} />
               </CollapsibleSection>
               <CollapsibleSection
                 icon={BarChart2}
@@ -635,7 +637,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
                 open={timelineOpen}
                 onToggle={() => setTimelineOpen(o => !o)}
               >
-                <CrisisTimeline feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} />
+                <CrisisTimeline feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} timezone={timezone} />
               </CollapsibleSection>
             </div>
           )}
@@ -674,7 +676,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
                 open={timelineOpen}
                 onToggle={() => setTimelineOpen(o => !o)}
               >
-                <CrisisTimeline feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} />
+                <CrisisTimeline feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} timezone={timezone} />
               </CollapsibleSection>
               <CollapsibleSection
                 icon={BarChart2}

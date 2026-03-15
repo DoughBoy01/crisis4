@@ -8,6 +8,7 @@ interface MarketSectionProps {
   description: string;
   items: MarketItem[];
   activeSector?: SectorId | null;
+  timezone?: string;
 }
 
 const categoryColors: Record<MarketCategory, string> = {
@@ -28,7 +29,7 @@ const categoryDots: Record<MarketCategory, string> = {
   fx: 'bg-teal-400',
 };
 
-export default function MarketSection({ category, label, description, items, activeSector }: MarketSectionProps) {
+export default function MarketSection({ category, label, description, items, activeSector, timezone }: MarketSectionProps) {
   if (items.length === 0) return null;
 
   return (
@@ -42,7 +43,7 @@ export default function MarketSection({ category, label, description, items, act
       </div>
       <div className="grid grid-cols-1 gap-3">
         {items.map(item => (
-          <MarketCard key={item.id} item={item} activeSector={activeSector} />
+          <MarketCard key={item.id} item={item} activeSector={activeSector} timezone={timezone} />
         ))}
       </div>
     </div>

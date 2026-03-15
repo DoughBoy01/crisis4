@@ -20,7 +20,7 @@ interface TimelineEvent {
   zone?: string;
 }
 
-function buildTimeline(feeds: FeedPayload | null, zones: ConflictZone[]): TimelineEvent[] {
+function buildTimeline(feeds: FeedPayload | null, zones: ConflictZone[], timezone = 'UTC'): TimelineEvent[] {
   if (!feeds) return [];
 
   const crisisKeywords = [
@@ -123,8 +123,20 @@ function buildTimeline(feeds: FeedPayload | null, zones: ConflictZone[]): Timeli
     );
 
     const pubDate = item.published ? new Date(item.published) : null;
+    const tzAbbr = pubDate ? (() => {
+      try {
+        return new Intl.DateTimeFormat('en-US', { timeZone: timezone, timeZoneName: 'short' })
+          .formatToParts(pubDate).find(p => p.type === 'timeZoneName')?.value ?? 'GMT';
+      } catch { return 'GMT'; }
+    })() : 'GMT';
     const timeStr = pubDate
-      ? pubDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' GMT'
+      ? (() => {
+        try {
+          return pubDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: timezone }) + ' ' + tzAbbr;
+        } catch {
+          return pubDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' GMT';
+        }
+      })()
       : 'Recent';
 
     return {
@@ -156,11 +168,12 @@ interface CrisisTimelineProps {
   feeds: FeedPayload | null;
   conflictZones: ConflictZone[];
   loading: boolean;
+  timezone?: string;
 }
 
-export default function CrisisTimeline({ feeds, conflictZones, loading }: CrisisTimelineProps) {
+export default function CrisisTimeline({ feeds, conflictZones, loading, timezone = 'UTC' }: CrisisTimelineProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
-  const events = buildTimeline(feeds, conflictZones);
+  const events = buildTimeline(feeds, conflictZones, timezone);
 
   const criticalCount = events.filter(e => e.severity === 'critical').length;
   const highCount = events.filter(e => e.severity === 'high').length;

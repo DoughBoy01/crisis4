@@ -348,7 +348,9 @@ export default function ShippingLaneStatus({ feeds, conflictZones, loading }: Sh
         </div>
       )}
 
-      <p className="text-[9px] text-muted-foreground/30 mt-3 text-right">RAG status derived from live news feeds · Updated on each refresh</p>
+      <p className="text-[9px] text-muted-foreground/30 mt-3 text-right">
+        RAG status derived from live RSS news feeds · GREEN = no disruption signals detected (not confirmed clear) · Verify with named carriers before decisions
+      </p>
     </div>
   );
 }

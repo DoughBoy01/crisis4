@@ -11,9 +11,10 @@ import PriceRangeChart from './PriceRangeChart';
 interface MarketCardProps {
   item: MarketItem;
   activeSector?: SectorId | null;
+  timezone?: string;
 }
 
-export default function MarketCard({ item, activeSector }: MarketCardProps) {
+export default function MarketCard({ item, activeSector, timezone = 'Europe/London' }: MarketCardProps) {
   const [expanded, setExpanded] = useState(false);
   const positive = item.changePercent24h >= 0;
   const isRelevant = activeSector ? item.relevantSectors.includes(activeSector) : false;
@@ -48,7 +49,9 @@ export default function MarketCard({ item, activeSector }: MarketCardProps) {
                   try {
                     const d = new Date(item.lastUpdated);
                     if (isNaN(d.getTime())) return item.lastUpdated;
-                    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }) + ' GMT';
+                    const tzAbbr = new Intl.DateTimeFormat('en-US', { timeZone: timezone, timeZoneName: 'short' })
+                      .formatToParts(d).find(p => p.type === 'timeZoneName')?.value ?? 'GMT';
+                    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: timezone }) + ' ' + tzAbbr;
                   } catch { return item.lastUpdated; }
                 })()}
               </span>

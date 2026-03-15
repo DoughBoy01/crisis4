@@ -17,6 +17,7 @@ interface HeaderProps {
   fxRates: FxRate[] | null;
   overallAccuracy: number | null;
   feedsLoading: boolean;
+  secondsSinceRefresh?: number;
   timezone: string;
   onTimezoneChange: (tz: string) => void;
   onOpenDiagnostics?: () => void;
@@ -46,6 +47,7 @@ export default function Header({
   fxRates,
   overallAccuracy,
   feedsLoading,
+  secondsSinceRefresh = 0,
   timezone,
   onTimezoneChange,
   onOpenDiagnostics,
@@ -164,6 +166,16 @@ export default function Header({
           <div className="max-w-screen-2xl mx-auto">
             <p className="text-xs text-amber-400/70">
               Live data not yet loaded. EIA and ExchangeRate.host API keys required for price feeds. RSS news feeds load without keys.
+            </p>
+          </div>
+        </div>
+      )}
+      {lastFetchedAt && !feedsLoading && secondsSinceRefresh > 900 && (
+        <div className="border-t border-border/50 bg-orange-950/20 px-4 sm:px-6 py-1.5">
+          <div className="max-w-screen-2xl mx-auto flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-400/70 shrink-0" />
+            <p className="text-xs text-orange-400/70">
+              Data last refreshed {Math.floor(secondsSinceRefresh / 60)} minutes ago — prices may not reflect current market conditions.
             </p>
           </div>
         </div>
