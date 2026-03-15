@@ -525,10 +525,12 @@ function buildPersonaPrompt(
   lines.push(newsSection);
   lines.push("");
 
-  lines.push("=== OUTPUT STANDARDS ===");
-  lines.push("Every number you cite must come from the data above. Do not invent prices.");
-  lines.push("Every news reference must come from the headlines above. Do not invent events.");
+  lines.push("=== OUTPUT STANDARDS — NON-NEGOTIABLE ===");
+  lines.push("Every number you cite must come from the PRICE DATA section above. Do not invent or estimate prices.");
+  lines.push("Every news reference must come from the NEWS & INTELLIGENCE section above. Do not invent events, headlines, or sources.");
   lines.push("Every £ estimate must use realistic reference volumes for this reader's role.");
+  lines.push("Do NOT invent scheduled data releases (PMI, CPI, BoE decisions, USDA reports, etc.) unless they appear in the feeds above. No economic calendar guessing.");
+  lines.push("If a price appears in DATA QUALITY ALERTS above, treat it as unavailable. Do not use it. Acknowledge the data gap instead.");
   lines.push("Write in complete, confident sentences. No bullet-point fragments in narrative fields.");
   lines.push("The reader should feel like a smart colleague just briefed them over coffee — not like they read a compliance report.");
   lines.push("");
@@ -582,8 +584,9 @@ function buildPersonaPrompt(
   lines.push("");
   lines.push("=== market_outlook ===");
   lines.push("2-3 sentences on what this reader should monitor between 07:00 and 17:00 GMT today.");
-  lines.push("Name specific data releases, scheduled events, or price levels. Be directional.");
-  lines.push("Example: 'Watch the 09:30 UK PMI release — a weak print will add pressure to GBP. Brent is testing the $X resistance level; a break above would trigger further diesel cost exposure.'");
+  lines.push("STRICT RULE: Only reference a scheduled data release (PMI, CPI, BoE decision, USDA report, etc.) if it appears in the news headlines above. Do NOT invent or assume economic calendar events. If no scheduled releases appear in the feeds, focus on price levels, geopolitical triggers, or momentum signals to watch instead.");
+  lines.push("Good example using only price signals: 'Brent is testing the $X resistance level — a break above would extend diesel cost exposure. Watch the GBP/USD response at the London open; any move below [level] would compound import costs further.'");
+  lines.push("Good example if a real event is in the feeds: 'The [specific event from headlines] is the key watch today — [implication]. Alongside this, Brent at $X/bbl means any further escalation in Gulf tensions would push diesel costs above [threshold].'");
   lines.push("");
   lines.push("=== sector_news_digest ===");
   lines.push("For each sector with content, list 1-3 of the specific headlines from the feeds above that drove your analysis.");

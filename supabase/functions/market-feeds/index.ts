@@ -105,17 +105,17 @@ interface YahooQuoteResult {
 }
 
 function parseStooqCSV(csv: string): { date: string; close: number; open: number; prevClose: number } | null {
-  const lines = csv.trim().split("\n");
-  if (lines.length < 3) return null;
-  const latest = lines[lines.length - 1].split(",");
-  const prev = lines[lines.length - 2].split(",");
+  const allLines = csv.trim().split("\n").map(l => l.trim()).filter(l => l.length > 0);
+  if (allLines.length < 3) return null;
+  const dataLines = allLines.slice(1);
+  if (dataLines.length < 1) return null;
+  const latest = dataLines[dataLines.length - 1].split(",");
+  const prev = dataLines.length >= 2 ? dataLines[dataLines.length - 2].split(",") : null;
   if (latest.length < 5 || isNaN(parseFloat(latest[4]))) return null;
-  return {
-    date: latest[0],
-    open: parseFloat(latest[1]),
-    close: parseFloat(latest[4]),
-    prevClose: prev.length >= 5 ? parseFloat(prev[4]) : parseFloat(latest[1]),
-  };
+  const close = parseFloat(latest[4]);
+  const open = parseFloat(latest[1]);
+  const prevClose = prev && prev.length >= 5 && !isNaN(parseFloat(prev[4])) ? parseFloat(prev[4]) : open;
+  return { date: latest[0], open, close, prevClose };
 }
 
 async function fetchStooqSymbol(stooqSymbol: string): Promise<{ close: number; prevClose: number; date: string } | null> {
@@ -230,13 +230,23 @@ async function fetchBrentCrude(): Promise<Record<string, unknown>> {
     };
   }
   try {
-    const url = `https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=${apiKey}&data[0]=value&length=5&sort[0][column]=period&sort[0][direction]=desc`;
+    const url = `https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=${apiKey}&data[0]=value&facets[product][]=EPCBRENT&facets[duoarea][]=RGC&length=5&sort[0][column]=period&sort[0][direction]=desc`;
     const res = await fetchWithTimeout(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json() as { response?: { data?: { period: string; value: string }[] } };
+    const json = await res.json() as { response?: { data?: { period: string; value: string; product: string; duoarea: string }[] } };
     const data = json?.response?.data ?? [];
-    const current = parseFloat(data[0]?.value ?? "0");
-    const previous = parseFloat(data[1]?.value ?? "0");
+
+    const brentRows = data.filter(d => {
+      const v = parseFloat(d.value);
+      return !isNaN(v) && v > 20 && v < 250;
+    });
+
+    if (brentRows.length === 0) {
+      throw new Error(`No valid Brent price rows in EIA response. Raw data: ${JSON.stringify(data.slice(0, 3))}`);
+    }
+
+    const current = parseFloat(brentRows[0].value);
+    const previous = brentRows.length >= 2 ? parseFloat(brentRows[1].value) : current;
     const changePct = previous > 0 ? ((current - previous) / previous) * 100 : 0;
     const age = ageMinutes(fetchTime);
     return {
@@ -244,14 +254,14 @@ async function fetchBrentCrude(): Promise<Record<string, unknown>> {
       success: true,
       error: null,
       fetch_time_gmt: fetchTime,
-      data_period: data[0]?.period ?? null,
+      data_period: brentRows[0].period ?? null,
       current_price: current,
       previous_price: previous,
       change_pct: Math.round(changePct * 100) / 100,
       change_abs: Math.round((current - previous) * 100) / 100,
       data_age_minutes: age,
       accuracy_score: accuracyScore(age, 1440, current > 0),
-      note: "EIA daily spot price — updated each US business day",
+      note: `EIA Brent spot (EPCBRENT/RGC) — weekly, updated each US business day. Period: ${brentRows[0].period}`,
     };
   } catch (e) {
     return { source_name: "EIA Brent Crude", success: false, error: String(e), fetch_time_gmt: fetchTime, data_age_minutes: null, accuracy_score: 0 };
