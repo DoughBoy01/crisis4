@@ -30,6 +30,7 @@ import DailyBriefPreview from './DailyBriefPreview';
 import ScoutIntelPanel from './ScoutIntelPanel';
 import BriefAccuracyPanel from './BriefAccuracyPanel';
 import { useScoutIntel } from '@/hooks/useScoutIntel';
+import { useDismissedIntel } from '@/hooks/useDismissedIntel';
 
 interface ServiceResult {
   id: string;
@@ -109,6 +110,7 @@ export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps
   const [personaBriefs, setPersonaBriefs] = useState<PersonaBriefStatus[]>([]);
   const [personaBriefsLoading, setPersonaBriefsLoading] = useState(true);
   const { run: scoutRun, loading: scoutLoading } = useScoutIntel();
+  const { dismissed, dismissTopic, undismiss } = useDismissedIntel();
 
   useEffect(() => {
     (async () => {
@@ -564,7 +566,14 @@ export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps
             </div>
           )}
           <div className="rounded-xl border border-slate-700/50 bg-slate-900/40 p-4">
-            <ScoutIntelPanel run={scoutRun} loading={scoutLoading} />
+            <ScoutIntelPanel
+              run={scoutRun}
+              loading={scoutLoading}
+              adminMode
+              dismissed={dismissed}
+              onDismiss={dismissTopic}
+              onUndismiss={undismiss}
+            />
           </div>
         </div>
 
