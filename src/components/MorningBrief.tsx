@@ -1,6 +1,5 @@
-import { Activity, Globe, AlertTriangle, Rss, Clock, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
+import { Activity, Globe, AlertTriangle, Rss, Clock, Sparkles, Loader2, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import type { OvernightStat } from '../types';
 import type { DailyBrief } from '@/hooks/useDailyBrief';
 import { convertGmtTimeStringToTz, getTzAbbreviation } from '@/lib/timezone';
@@ -82,7 +81,7 @@ export default function MorningBrief({
   timezone,
   topMover,
   dailyBrief,
-  briefLoading,
+  briefLoading: _briefLoading,
   briefGenerating,
 }: MorningBriefProps) {
   const tzAbbr = getTzAbbreviation(timezone);
@@ -91,11 +90,10 @@ export default function MorningBrief({
   const isMarketOpen = marketOpenCountdown === 'Open';
   const isClosedPermanent = marketOpenCountdown.startsWith('Mon') || marketOpenCountdown.startsWith('Tomorrow');
 
-  const todayLong = new Date().toLocaleDateString('en-GB', {
-    weekday: 'long',
+  const todayShort = new Date().toLocaleDateString('en-GB', {
+    weekday: 'short',
     day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+    month: 'short',
     timeZone: timezone,
   });
 
@@ -111,187 +109,184 @@ export default function MorningBrief({
     <div className={cn(
       'relative overflow-hidden rounded-xl border',
       hasUrgent
-        ? 'border-red-500/30 bg-gradient-to-br from-red-950/20 via-slate-800/80 to-slate-900/90'
-        : 'border-slate-700/60 bg-gradient-to-br from-slate-800/80 via-slate-800/60 to-slate-900/90'
+        ? 'border-red-500/30 bg-gradient-to-r from-red-950/30 via-slate-800/70 to-slate-900/80'
+        : 'border-slate-700/50 bg-gradient-to-r from-slate-800/70 via-slate-800/50 to-slate-900/80'
     )}>
+      {/* Top accent line */}
       <div className={cn(
         'absolute top-0 left-0 right-0 h-px',
-        hasUrgent ? 'bg-gradient-to-r from-red-500/60 via-red-400/30 to-transparent' : 'bg-gradient-to-r from-sky-500/40 via-sky-400/20 to-transparent'
+        hasUrgent
+          ? 'bg-gradient-to-r from-red-500/70 via-red-400/30 to-transparent'
+          : 'bg-gradient-to-r from-sky-500/50 via-sky-400/20 to-transparent'
       )} />
 
-      <div className="relative px-5 pt-5 pb-5">
+      <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-0 divide-y lg:divide-y-0 lg:divide-x divide-border/20">
 
-        {/* Date + live badge row */}
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] sm:text-[11px] font-bold text-muted-foreground/50 tracking-widest uppercase">
-              {todayLong}
-            </span>
-            <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30 font-mono gap-1 py-0">
+        {/* ── LEFT: Narrative + three things ── */}
+        <div className="px-5 pt-4 pb-4">
+
+          {/* Meta row */}
+          <div className="flex items-center gap-2.5 mb-3 flex-wrap">
+            <span className="text-[10px] font-bold text-muted-foreground/50 tracking-widest uppercase">{todayShort}</span>
+            <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30 font-mono gap-1 py-0 h-4">
               <Activity size={7} />
               LIVE
             </Badge>
-          </div>
 
-          <div className={cn(
-            'shrink-0 flex items-center gap-2 rounded-lg border px-2.5 sm:px-3 py-1.5',
-            isMarketOpen
-              ? 'bg-emerald-950/40 border-emerald-500/30'
-              : 'bg-slate-900/60 border-border/60'
-          )}>
-            <Clock size={10} className={isMarketOpen ? 'text-emerald-400' : 'text-muted-foreground/60'} />
-            <div>
-              <div className={cn(
-                'text-sm sm:text-base font-bold font-mono leading-none',
-                isMarketOpen ? 'text-emerald-400' : 'text-slate-200'
+            {/* Market status */}
+            <div className={cn(
+              'flex items-center gap-1.5 rounded-md border px-2 py-0.5',
+              isMarketOpen ? 'bg-emerald-950/30 border-emerald-500/25' : 'bg-slate-900/40 border-border/40'
+            )}>
+              <Clock size={9} className={isMarketOpen ? 'text-emerald-400' : 'text-muted-foreground/50'} />
+              <span className={cn(
+                'text-[11px] font-bold font-mono',
+                isMarketOpen ? 'text-emerald-400' : 'text-slate-300'
               )}>
-                {isMarketOpen ? 'Open' : marketOpenCountdown}
-              </div>
-              <div className="text-[9px] text-muted-foreground/50 leading-none mt-0.5">
-                {isMarketOpen
-                  ? 'Trading now'
-                  : isClosedPermanent
-                    ? `Next open ${localMarketOpen} ${tzAbbr}`
-                    : `Opens ${localMarketOpen} ${tzAbbr}`}
-              </div>
+                {isMarketOpen ? 'Market Open' : marketOpenCountdown}
+              </span>
+              {!isMarketOpen && (
+                <span className="text-[9px] text-muted-foreground/40">
+                  {isClosedPermanent ? `opens ${localMarketOpen} ${tzAbbr}` : `opens ${localMarketOpen} ${tzAbbr}`}
+                </span>
+              )}
             </div>
-          </div>
-        </div>
 
-        {/* Main narrative / headline */}
-        <div className="mb-4">
+            {/* Signal chips */}
+            {urgentCount > 0 && (
+              <Badge variant="outline" className="bg-red-500/20 text-red-300 border-red-500/40 font-bold tracking-widest gap-1 animate-pulse text-[10px] h-5">
+                <AlertTriangle size={8} />
+                {urgentCount} URGENT
+              </Badge>
+            )}
+            {buyCount > 0 && (
+              <Badge variant="outline" className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold tracking-widest gap-1 text-[10px] h-5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                {buyCount} BUY
+              </Badge>
+            )}
+            {watchCount > 0 && (
+              <Badge variant="outline" className="bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold tracking-widest gap-1 text-[10px] h-5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                {watchCount} WATCH
+              </Badge>
+            )}
+          </div>
+
+          {/* Main narrative */}
           {isGenerating ? (
-            <div className="flex items-center gap-2.5 mb-2">
-              <Loader2 size={14} className="text-sky-400 animate-spin shrink-0" />
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 size={13} className="text-sky-400 animate-spin shrink-0" />
               <span className="text-sm text-muted-foreground/60 italic">Generating overnight brief...</span>
             </div>
           ) : hasAI ? (
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               <div className="flex items-start gap-2">
-                <Sparkles size={13} className="text-sky-400 shrink-0 mt-1" />
+                <Sparkles size={12} className="text-sky-400 shrink-0 mt-0.5" />
                 <p className={cn(
-                  'text-base sm:text-lg font-semibold leading-snug',
+                  'text-sm sm:text-base font-semibold leading-snug',
                   hasUrgent ? 'text-red-100' : 'text-slate-100'
                 )}>
                   {aiNarrative}
                 </p>
               </div>
               {geopolitical && (
-                <p className="text-sm text-slate-400 leading-relaxed pl-5 border-l border-border/40">
+                <p className="text-xs text-slate-400 leading-relaxed pl-[22px] border-l border-border/30">
                   {geopolitical}
                 </p>
               )}
             </div>
           ) : (
-            <h1 className={cn(
-              'text-xl sm:text-2xl font-bold leading-tight tracking-tight',
+            <p className={cn(
+              'text-sm sm:text-base font-semibold leading-snug',
               hasUrgent ? 'text-red-100' : 'text-slate-100'
             )}>
               {fallbackHeadline}
-            </h1>
+            </p>
           )}
 
-          <div className="flex items-center gap-3 mt-2 flex-wrap">
+          {/* Three things */}
+          {threeThings.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {threeThings.map((thing, i) => (
+                <div key={i} className="flex items-start gap-1.5 bg-slate-900/50 border border-border/30 rounded-lg px-2.5 py-1.5 max-w-xs">
+                  <span className="text-[10px] font-bold text-sky-500/80 font-mono shrink-0 mt-0.5">{i + 1}</span>
+                  <p className="text-[11px] text-slate-300 leading-snug">{thing}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Footer meta */}
+          <div className="flex items-center gap-3 mt-3 flex-wrap">
             {localBriefGenerated && (
-              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50">
-                <Globe size={9} />
-                <span>Brief ready at {localBriefGenerated}</span>
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground/40">
+                <Globe size={8} />
+                <span>Updated {localBriefGenerated}</span>
               </div>
             )}
             {hasAI && dailyBrief?.model && dailyBrief.model !== 'none' && (
               <>
-                <span className="text-muted-foreground/30">·</span>
-                <div className="flex items-center gap-1 text-[10px] text-sky-500/50">
-                  <Sparkles size={8} />
-                  <span>AI analysis · {dailyBrief.model}</span>
+                <span className="text-muted-foreground/25">·</span>
+                <div className="flex items-center gap-1 text-[10px] text-sky-500/40">
+                  <Sparkles size={7} />
+                  <span>AI · {dailyBrief.model}</span>
                 </div>
               </>
             )}
             {liveSourcesOk !== undefined && liveSourcesTotal !== undefined && (
               <>
-                <span className="text-muted-foreground/30">·</span>
+                <span className="text-muted-foreground/25">·</span>
                 <div className="flex items-center gap-1 text-[10px]">
-                  <Rss size={9} className={liveSourcesOk === liveSourcesTotal ? 'text-emerald-500/60' : 'text-amber-500/60'} />
-                  <span className={liveSourcesOk === liveSourcesTotal ? 'text-emerald-500/60' : 'text-amber-500/60'}>
-                    {liveSourcesOk}/{liveSourcesTotal} sources live
+                  <Rss size={8} className={liveSourcesOk === liveSourcesTotal ? 'text-emerald-500/50' : 'text-amber-500/50'} />
+                  <span className={liveSourcesOk === liveSourcesTotal ? 'text-emerald-500/50' : 'text-amber-500/50'}>
+                    {liveSourcesOk}/{liveSourcesTotal} sources
                   </span>
                 </div>
               </>
             )}
             {liveHeadlineCount !== undefined && (
               <>
-                <span className="text-muted-foreground/30">·</span>
-                <span className="text-[10px] text-muted-foreground/50">{liveHeadlineCount} headlines scanned</span>
+                <span className="text-muted-foreground/25">·</span>
+                <span className="text-[10px] text-muted-foreground/40">{liveHeadlineCount} headlines</span>
               </>
             )}
           </div>
         </div>
 
-        {/* Three things that matter today */}
-        {threeThings.length > 0 && (
-          <div className="mb-4 bg-slate-900/50 rounded-lg border border-border/40 px-3.5 py-3 space-y-2">
-            <p className="text-[10px] font-bold text-muted-foreground/50 tracking-widest uppercase">3 things that matter today</p>
-            {threeThings.map((thing, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <span className="text-[10px] font-bold text-sky-500/70 font-mono mt-0.5 shrink-0">{i + 1}</span>
-                <p className="text-sm text-slate-300 leading-snug">{thing}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Signal chips */}
-        {(urgentCount > 0 || buyCount > 0 || watchCount > 0) && (
-          <div className="flex items-center gap-2 flex-wrap mb-4">
-            <ArrowRight size={10} className="text-muted-foreground/40" />
-            {urgentCount > 0 && (
-              <Badge variant="outline" className="bg-red-500/20 text-red-300 border-red-500/40 font-bold tracking-widest gap-1.5 animate-pulse text-[10px]">
-                <AlertTriangle size={9} />
-                {urgentCount} URGENT
-              </Badge>
-            )}
-            {buyCount > 0 && (
-              <Badge variant="outline" className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold tracking-widest gap-1.5 text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                {buyCount} BUY NOW
-              </Badge>
-            )}
-            {watchCount > 0 && (
-              <Badge variant="outline" className="bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold tracking-widest gap-1.5 text-[10px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                {watchCount} WATCH
-              </Badge>
-            )}
-          </div>
-        )}
-
-        <Separator className="mb-4 bg-border/30" />
-
-        {/* KPI grid */}
-        <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2">
-          {overnightStats.map(stat => (
-            <div
-              key={stat.label}
-              className={cn(
-                'rounded-lg px-2.5 py-2.5 border',
-                stat.highlight
-                  ? 'bg-red-950/30 border-red-500/25'
-                  : 'bg-slate-900/50 border-border/50'
-              )}
-            >
-              <div className={cn(
-                'text-lg font-bold font-mono leading-none',
-                stat.highlight ? 'text-red-400' : 'text-slate-100'
-              )}>
-                {stat.value}
-              </div>
-              <div className="text-[10px] text-muted-foreground/60 leading-tight mt-1">{stat.label}</div>
-              {stat.sub && (
-                <div className="text-[10px] text-muted-foreground/40 leading-tight">{stat.sub}</div>
-              )}
+        {/* ── RIGHT: KPI stat tiles ── */}
+        {overnightStats.length > 0 && (
+          <div className="lg:w-72 xl:w-80 px-4 py-4 flex flex-col justify-center">
+            <div className="flex items-center gap-1.5 mb-3">
+              <TrendingUp size={10} className="text-muted-foreground/40" />
+              <span className="text-[10px] font-bold text-muted-foreground/40 tracking-widest uppercase">Overnight Stats</span>
             </div>
-          ))}
-        </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
+              {overnightStats.map(stat => (
+                <div
+                  key={stat.label}
+                  className={cn(
+                    'rounded-lg px-2.5 py-2.5 border flex flex-col',
+                    stat.highlight
+                      ? 'bg-red-950/40 border-red-500/30'
+                      : 'bg-slate-900/60 border-border/40'
+                  )}
+                >
+                  <div className={cn(
+                    'text-lg font-bold font-mono leading-none',
+                    stat.highlight ? 'text-red-300' : 'text-slate-100'
+                  )}>
+                    {stat.value}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground/55 leading-tight mt-1">{stat.label}</div>
+                  {stat.sub && (
+                    <div className="text-[9px] text-muted-foreground/35 leading-tight">{stat.sub}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

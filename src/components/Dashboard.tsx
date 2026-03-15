@@ -323,7 +323,6 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
         onOpenDiagnostics={onOpenDiagnostics}
       />
 
-      {/* ── CRITICAL ALERT STRIP ── full-bleed, unmissable ── */}
       {criticalAlerts.length > 0 && (
         <div className="border-b border-red-900/60 bg-red-950/30">
           <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4">
@@ -332,7 +331,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
         </div>
       )}
 
-      {/* ── SECTOR FILTER BAR ── sticky below header ── */}
+      {/* ── SECTOR FILTER BAR ── */}
       <div className="border-b border-border/30 bg-background/95 backdrop-blur-sm sticky top-14 z-40">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-2">
           <div className="flex items-center gap-3">
@@ -345,83 +344,116 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
         </div>
       </div>
 
-      <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
+      <main className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5 space-y-5">
 
-        {/* ── TWO-COLUMN LAYOUT: primary workflow + context sidebar ── */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 items-start">
+        {/* ═══════════════════════════════════════════════════
+            ROW 1: Situation brief (full-width hero)
+        ═══════════════════════════════════════════════════ */}
+        <MorningBrief
+          urgentCount={urgentCount}
+          buyCount={buyCount}
+          watchCount={watchCount}
+          marketOpenCountdown={marketOpenCountdown}
+          marketOpenTime={marketOpenTime}
+          briefGeneratedAt={liveBriefGeneratedAt}
+          overnightStats={overnightStats}
+          liveHeadlineCount={liveHeadlineCount}
+          liveSourcesOk={feeds?.sources_ok}
+          liveSourcesTotal={feeds?.sources_total}
+          timezone={timezone}
+          topMover={topMover}
+          dailyBrief={dailyBrief}
+          briefLoading={briefLoading}
+          briefGenerating={briefGenerating}
+        />
 
-          {/* ══ LEFT: Primary daily workflow ══ */}
+        {/* ═══════════════════════════════════════════════════
+            ROW 2: Live price ticker
+        ═══════════════════════════════════════════════════ */}
+        <LivePriceBanner
+          brentSrc={brentSrc}
+          fxSrc={fxSrc}
+          loading={feedsLoading}
+        />
+
+        {/* ═══════════════════════════════════════════════════
+            ROW 3: Main dashboard grid
+            Left: Alerts + Actions  |  Right: Intel sidebar
+        ═══════════════════════════════════════════════════ */}
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5 items-start">
+
+          {/* ── LEFT COLUMN ── */}
           <div className="space-y-5">
 
-            {/* Situation brief */}
-            <MorningBrief
-              urgentCount={urgentCount}
-              buyCount={buyCount}
-              watchCount={watchCount}
-              marketOpenCountdown={marketOpenCountdown}
-              marketOpenTime={marketOpenTime}
-              briefGeneratedAt={liveBriefGeneratedAt}
-              overnightStats={overnightStats}
-              liveHeadlineCount={liveHeadlineCount}
-              liveSourcesOk={feeds?.sources_ok}
-              liveSourcesTotal={feeds?.sources_total}
-              timezone={timezone}
-              topMover={topMover}
-              dailyBrief={dailyBrief}
-              briefLoading={briefLoading}
-              briefGenerating={briefGenerating}
-            />
-
-            {/* Live price ticker */}
-            <LivePriceBanner
-              brentSrc={brentSrc}
-              fxSrc={fxSrc}
-              loading={feedsLoading}
-            />
-
-            {/* Today vs yesterday price diffs */}
-            <DailyDiff />
-
-            {/* Overnight alerts */}
-            {(filteredAlerts.length > 0 || feedsLoading) && (
-              <div className="space-y-3">
-                <SectionDivider
-                  label="Alerts from last night"
-                  sub={activeSector ? "— filtered for your sector" : "— read before markets open"}
-                />
-                {feedsLoading && filteredAlerts.length === 0 ? (
-                  <div className="rounded-xl border border-border/30 bg-slate-800/20 px-5 py-4 animate-pulse">
-                    <div className="h-3 bg-slate-700/50 rounded w-2/3 mb-2" />
-                    <div className="h-3 bg-slate-700/30 rounded w-1/2" />
-                  </div>
-                ) : (
-                  <AlertBanner alerts={filteredAlerts} timezone={timezone} />
-                )}
-              </div>
+            {/* ROI savings banner */}
+            {topAction?.roi && (
+              <ROISavingsBar topAction={topAction} subscriptionCost={SUBSCRIPTION_COST_ANNUAL} />
             )}
 
-            {/* Actions */}
-            <div className="space-y-3">
-              <SectionDivider
-                label="Your actions for today"
-                sub={activeSector ? "— filtered for your sector" : "— work through this before 9am"}
-              />
-              {topAction?.roi && (
-                <ROISavingsBar topAction={topAction} subscriptionCost={SUBSCRIPTION_COST_ANNUAL} />
-              )}
-              {feedsLoading && actionItems.length === 0 ? (
-                <div className="rounded-xl border border-border/30 bg-slate-800/20 px-5 py-8 text-center animate-pulse">
-                  <div className="h-3 bg-slate-700/50 rounded w-1/3 mx-auto mb-2" />
-                  <div className="h-3 bg-slate-700/30 rounded w-1/4 mx-auto" />
+            {/* 2-up grid: Overnight alerts + Today vs yesterday */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+              {/* Overnight alerts panel */}
+              <div className="rounded-xl border border-border/40 bg-slate-800/30 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-slate-800/40">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-xs font-bold text-slate-300 tracking-wider uppercase">Overnight Alerts</span>
+                  {filteredAlerts.length > 0 && (
+                    <span className="ml-auto text-[10px] font-mono text-amber-400/70">{filteredAlerts.length} signals</span>
+                  )}
                 </div>
-              ) : (
-                <ActionPanel actions={actionItems} activeSector={activeSector} aiRationale={dailyBrief?.action_rationale} />
-              )}
+                <div className="p-4">
+                  {feedsLoading && filteredAlerts.length === 0 ? (
+                    <div className="space-y-2 animate-pulse">
+                      <div className="h-3 bg-slate-700/50 rounded w-2/3" />
+                      <div className="h-3 bg-slate-700/30 rounded w-1/2" />
+                    </div>
+                  ) : filteredAlerts.length > 0 ? (
+                    <AlertBanner alerts={filteredAlerts} timezone={timezone} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground/50 text-center py-4">No overnight alerts.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Daily diff panel */}
+              <div className="rounded-xl border border-border/40 bg-slate-800/30 overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-slate-800/40">
+                  <span className="w-2 h-2 rounded-full bg-sky-400" />
+                  <span className="text-xs font-bold text-slate-300 tracking-wider uppercase">Price Changes</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground/40">vs yesterday</span>
+                </div>
+                <div className="p-4">
+                  <DailyDiff />
+                </div>
+              </div>
+
+            </div>
+
+            {/* Action panel — full width within left column */}
+            <div className="rounded-xl border border-border/40 bg-slate-800/30 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-slate-800/40">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="text-xs font-bold text-slate-300 tracking-wider uppercase">Your Actions Today</span>
+                <span className="ml-auto text-[10px] text-muted-foreground/40">
+                  {activeSector ? 'filtered for your sector' : 'work through before 9am'}
+                </span>
+              </div>
+              <div className="p-0">
+                {feedsLoading && actionItems.length === 0 ? (
+                  <div className="px-5 py-8 text-center animate-pulse">
+                    <div className="h-3 bg-slate-700/50 rounded w-1/3 mx-auto mb-2" />
+                    <div className="h-3 bg-slate-700/30 rounded w-1/4 mx-auto" />
+                  </div>
+                ) : (
+                  <ActionPanel actions={actionItems} activeSector={activeSector} aiRationale={dailyBrief?.action_rationale} />
+                )}
+              </div>
             </div>
 
           </div>
 
-          {/* ══ RIGHT: Context, accuracy, signal guide ══ */}
+          {/* ── RIGHT COLUMN: sticky intel sidebar ── */}
           <div className="xl:sticky xl:top-[118px] space-y-4">
             <IntelSidebar
               feeds={feeds}
@@ -430,7 +462,6 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
               nextRefreshIn={nextRefreshIn}
               onRefresh={refreshFeeds}
             />
-            {/* Data freshness detail — mobile only, desktop uses IntelSidebar */}
             <div className="xl:hidden">
               <DataFreshnessBar
                 feeds={feeds}
@@ -440,57 +471,22 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
                 onRefresh={refreshFeeds}
               />
             </div>
-
           </div>
 
         </div>
 
-        {/* ── BELOW FOLD: Deep intelligence (collapsible) ── */}
-        <div className="mt-8 space-y-3">
-          <SectionDivider
-            label="Deeper intelligence"
-            sub={activeSector ? "— filtered for your sector" : "— conflict, news & market data"}
-          />
-
-          <CollapsibleSection
-            icon={Shield}
-            label="Conflict Intelligence"
-            sublabel={activeSector
-              ? `— ${filteredConflictZones.length} zones relevant to your sector`
-              : `— ${conflictZones.length} active zones`}
-            open={conflictOpen}
-            onToggle={() => setConflictOpen(o => !o)}
-          >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <ConflictRiskMap zones={filteredConflictZones} loading={feedsLoading} />
-              <SupplyChainExposure items={filteredSupplyExposure} loading={feedsLoading} />
-              <ContingencyPlaybook scenarios={filteredPlaybooks} loading={feedsLoading} />
-            </div>
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            icon={Newspaper}
-            label="Live News Feed"
-            sublabel={liveHeadlineCount ? `— ${liveHeadlineCount} headlines` : undefined}
-            open={newsOpen}
-            onToggle={() => setNewsOpen(o => !o)}
-          >
-            <LiveNewsFeed
-              feeds={feeds}
-              loading={feedsLoading}
-              error={feedsError}
-              onRefresh={refreshFeeds}
-              timezone={timezone}
-            />
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            icon={BarChart2}
-            label="Market Price Reference"
-            sublabel={activeSector ? '— filtered for your sector' : '— all tracked commodities'}
-            open={marketsOpen}
-            onToggle={() => setMarketsOpen(o => !o)}
-          >
+        {/* ═══════════════════════════════════════════════════
+            ROW 4: Market Price Reference — inline, no collapse
+        ═══════════════════════════════════════════════════ */}
+        <div className="rounded-xl border border-border/40 bg-slate-800/20 overflow-hidden">
+          <div className="flex items-center gap-2 px-4 sm:px-5 py-3.5 border-b border-border/30 bg-slate-800/30">
+            <BarChart2 size={13} className="text-sky-400/70" />
+            <span className="text-xs font-bold text-slate-300 tracking-wider uppercase">Market Price Reference</span>
+            <span className="text-[10px] text-muted-foreground/40 hidden sm:inline ml-1">
+              {activeSector ? '— filtered for your sector' : '— all tracked commodities'}
+            </span>
+          </div>
+          <div className="p-4 sm:p-5">
             {(feedsLoading || historicalLoading) && marketItems.length === 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 {categories.map(cat => (
@@ -526,6 +522,67 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
                 </div>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════
+            ROW 5: Deep intel — 3-up grid (conflict / news / supply)
+        ═══════════════════════════════════════════════════ */}
+        <div className="space-y-3">
+          <SectionDivider
+            label="Deeper intelligence"
+            sub={activeSector ? "— filtered for your sector" : "— conflict, supply chain & news"}
+          />
+
+          {/* 3-up panel row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-border/40 bg-slate-800/20 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-slate-800/30">
+                <Shield size={12} className="text-red-400/70" />
+                <span className="text-xs font-bold text-slate-300 tracking-wider uppercase">Conflict Zones</span>
+                <span className="ml-auto text-[10px] text-muted-foreground/40">{filteredConflictZones.length} active</span>
+              </div>
+              <div className="p-4">
+                <ConflictRiskMap zones={filteredConflictZones} loading={feedsLoading} />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border/40 bg-slate-800/20 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-slate-800/30">
+                <span className="w-2 h-2 rounded-full bg-orange-400/80" />
+                <span className="text-xs font-bold text-slate-300 tracking-wider uppercase">Supply Chain Exposure</span>
+              </div>
+              <div className="p-4">
+                <SupplyChainExposure items={filteredSupplyExposure} loading={feedsLoading} />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border/40 bg-slate-800/20 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-slate-800/30">
+                <span className="w-2 h-2 rounded-full bg-sky-400/80" />
+                <span className="text-xs font-bold text-slate-300 tracking-wider uppercase">Contingency Playbook</span>
+              </div>
+              <div className="p-4">
+                <ContingencyPlaybook scenarios={filteredPlaybooks} loading={feedsLoading} />
+              </div>
+            </div>
+          </div>
+
+          {/* News feed — collapsible to save vertical space */}
+          <CollapsibleSection
+            icon={Newspaper}
+            label="Live News Feed"
+            sublabel={liveHeadlineCount ? `— ${liveHeadlineCount} headlines` : undefined}
+            open={newsOpen}
+            onToggle={() => setNewsOpen(o => !o)}
+          >
+            <LiveNewsFeed
+              feeds={feeds}
+              loading={feedsLoading}
+              error={feedsError}
+              onRefresh={refreshFeeds}
+              timezone={timezone}
+            />
           </CollapsibleSection>
         </div>
 
