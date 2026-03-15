@@ -137,7 +137,7 @@ export default function HomePage({ onEnter }: HomePageProps) {
             onClick={onEnter}
             className="text-xs text-slate-500 hover:text-slate-400 transition-colors flex items-center gap-1.5 mx-auto"
           >
-            or browse the live dashboard
+            or browse yesterday's dashboard
             <ArrowRight size={11} />
           </button>
         </div>
