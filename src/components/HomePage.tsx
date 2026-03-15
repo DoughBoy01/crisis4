@@ -5,9 +5,9 @@ interface HomePageProps {
 }
 
 const timeline = [
-  { time: '11pm', label: 'Markets close in Asia', detail: 'We start watching.' },
-  { time: '2am', label: 'European news breaks', detail: 'Conflict updates, price moves, shipping alerts captured.' },
-  { time: '4am', label: 'US overnight session', detail: 'Energy, ag futures, and FX scored for impact.' },
+  { time: '1am', label: 'Tokyo & Shanghai open', detail: 'Asian session begins. We start watching futures, FX, and commodity moves.' },
+  { time: '3am', label: 'Hong Kong joins', detail: 'Conflict updates, shipping alerts, and price moves captured across Asia.' },
+  { time: '5am', label: 'Singapore & Europe stir', detail: 'Energy, ag futures, and FX scored for impact before London opens.' },
   { time: '6am', label: 'Brief compiled', detail: 'AI distils overnight events into a ranked intelligence report.' },
   { time: '7am', label: 'In your inbox', detail: 'You read it with your coffee. You know what to act on.' },
 ];
