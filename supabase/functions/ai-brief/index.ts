@@ -50,6 +50,8 @@ interface DailyBrief {
   geopolitical_context: string;
   procurement_actions: string[];
   market_outlook: string;
+  sector_news_digest: Record<string, string[]>;
+  sector_forward_outlook: Record<string, string>;
   model: string;
   prompt_tokens: number | null;
   completion_tokens: number | null;
@@ -379,6 +381,19 @@ function buildPrompt(
   lines.push("- Name specific data releases, scheduled events, or price levels to monitor.");
   lines.push("- EMPTY STRING if nothing notable is scheduled or signalled.");
   lines.push("");
+  lines.push("CRITICAL RULES FOR sector_news_digest:");
+  lines.push("- For each sector that has content in action_rationale, list the 1-3 most important news headlines or price events that drove the analysis.");
+  lines.push("- Each entry is a plain string: the exact headline text or price event description (e.g. '[Reuters World RSS] Russian strikes hit Odessa port infrastructure').");
+  lines.push("- Include the source name in brackets at the start, exactly as it appears in the news feeds above.");
+  lines.push("- If a sector has no content (empty string in action_rationale), set its digest to an empty array.");
+  lines.push("- This field is used to show the reader WHY the sector analysis was written — cite your sources.");
+  lines.push("");
+  lines.push("CRITICAL RULES FOR sector_forward_outlook:");
+  lines.push("- For each sector that has content in action_rationale, write 1-2 sentences on what is LIKELY TO HAPPEN in that sector over the next 2-5 trading days.");
+  lines.push("- Base this on: the current price direction, the geopolitical risk trajectory, seasonal demand patterns, and any upcoming scheduled events.");
+  lines.push("- Be directional: say 'prices likely to remain elevated', 'watch for pullback if...', 'further upside risk if...' — not vague generalities.");
+  lines.push("- If a sector has no content in action_rationale, set its forward outlook to an empty string.");
+  lines.push("");
   lines.push("Return ONLY valid JSON with this exact structure:");
   lines.push(JSON.stringify({
     narrative: "3-5 sentence plain-English summary of the overnight session. Lead with the single biggest market move or geopolitical development. Include exact prices and % changes. Reference historical percentile position for any extreme moves. State whether conflict news represents escalation above baseline norms. End with the net procurement implication.",
@@ -401,6 +416,24 @@ function buildPrompt(
       "metals": "ONLY if Gold, Silver, or Copper moved meaningfully (>0.3%) OR metals headlines appeared. 3-5 sentences: (1) exact price and % move, (2) whether gold/silver move signals risk-off sentiment alongside geopolitical news, (3) copper as industrial demand indicator, (4) procurement relevance for packaging, electrical, construction buyers. EMPTY STRING if no data.",
       "fx": "ONLY if GBP/USD or GBP/EUR moved by at least 0.1% OR Bank of England/OBR news appeared. 3-5 sentences: (1) exact rates and % moves, (2) quantified import cost impact (e.g. '0.4% GBP/USD fall = ~0.4% rise in USD import costs'), (3) any BoE/OBR policy context driving the move, (4) hedging or forward cover implications. EMPTY STRING if FX flat and no policy news.",
       "policy": "ONLY if Bank of England, OBR, or fiscal policy news explicitly appeared. 3-5 sentences: (1) specific policy announcement or signal, (2) market reaction, (3) procurement/cost implication (interest rates, credit costs, broader economic outlook). EMPTY STRING if no policy news."
+    },
+    sector_news_digest: {
+      "energy": ["[source name] headline text that drove this analysis", "second headline if applicable"],
+      "agricultural": ["[source name] headline text"],
+      "freight": [],
+      "fertilizer": [],
+      "metals": [],
+      "fx": [],
+      "policy": []
+    },
+    sector_forward_outlook: {
+      "energy": "1-2 sentences on likely direction over next 2-5 days based on current trajectory, geopolitical risk, and seasonal patterns. Directional language required. EMPTY STRING if no data for this sector.",
+      "agricultural": "1-2 sentences directional outlook. EMPTY STRING if no data.",
+      "freight": "EMPTY STRING if no data.",
+      "fertilizer": "EMPTY STRING if no data.",
+      "metals": "EMPTY STRING if no data.",
+      "fx": "EMPTY STRING if no data.",
+      "policy": "EMPTY STRING if no data."
     }
   }));
 
@@ -565,6 +598,8 @@ Deno.serve(async (req: Request) => {
       geopolitical_context: (parsed.geopolitical_context as string) || "",
       procurement_actions: (parsed.procurement_actions as string[]) || [],
       market_outlook: (parsed.market_outlook as string) || "",
+      sector_news_digest: (parsed.sector_news_digest as Record<string, string[]>) || {},
+      sector_forward_outlook: (parsed.sector_forward_outlook as Record<string, string>) || {},
       model: openaiData.model ?? "gpt-4o",
       prompt_tokens: usage.prompt_tokens ?? null,
       completion_tokens: usage.completion_tokens ?? null,

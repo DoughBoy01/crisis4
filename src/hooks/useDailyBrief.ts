@@ -13,6 +13,8 @@ export interface DailyBrief {
   geopolitical_context: string;
   procurement_actions: string[];
   market_outlook: string;
+  sector_news_digest: Record<string, string[]>;
+  sector_forward_outlook: Record<string, string>;
   model: string;
   prompt_tokens: number | null;
   completion_tokens: number | null;

@@ -27,6 +27,8 @@ interface DailyBrief {
   geopolitical_context: string;
   procurement_actions: string[];
   market_outlook: string;
+  sector_news_digest: Record<string, string[]> | null;
+  sector_forward_outlook: Record<string, string> | null;
   model: string;
   prompt_tokens: number | null;
   completion_tokens: number | null;
@@ -191,17 +193,39 @@ function buildPriceTable(snapshot: PriceSnapshotEntry[], persona: PersonaId): st
     </table>`;
 }
 
-function buildSectorRows(brief: DailyBrief, sectors: string[]): string {
+function buildSectorRows(brief: DailyBrief, sectors: string[], accentColor: string): string {
   const rationale = brief.action_rationale ?? {};
+  const digest = brief.sector_news_digest ?? {};
+  const outlook = brief.sector_forward_outlook ?? {};
+
   const rows = sectors
     .filter(k => rationale[k] && rationale[k].length > 5)
-    .map(k => `
+    .map(k => {
+      const headlines = (digest[k] ?? []).filter(h => h.length > 0);
+      const forwardText = outlook[k] ?? "";
+
+      const headlinesHtml = headlines.length > 0
+        ? `<div style="margin-top:10px;padding:8px 10px;background:#060d1a;border-radius:5px;border-left:2px solid #334155;">
+            ${headlines.map(h => `<p style="margin:0 0 4px;font-size:11px;color:#64748b;line-height:1.5;font-style:italic;">${h}</p>`).join("")}
+          </div>`
+        : "";
+
+      const forwardHtml = forwardText
+        ? `<p style="margin:10px 0 0;font-size:12px;color:${accentColor};line-height:1.6;font-weight:600;">&#8594; ${forwardText}</p>`
+        : "";
+
+      return `
       <tr>
-        <td style="padding:11px 16px;border-bottom:1px solid #1e293b;vertical-align:top;width:130px;white-space:nowrap;">
+        <td style="padding:14px 16px;border-bottom:1px solid #1e293b;vertical-align:top;width:130px;white-space:nowrap;">
           <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;">${SECTOR_LABELS[k] ?? k}</span>
         </td>
-        <td style="padding:11px 16px;border-bottom:1px solid #1e293b;font-size:13px;color:#cbd5e1;line-height:1.6;">${rationale[k]}</td>
-      </tr>`)
+        <td style="padding:14px 16px;border-bottom:1px solid #1e293b;font-size:13px;color:#cbd5e1;line-height:1.65;">
+          ${rationale[k]}
+          ${headlinesHtml}
+          ${forwardHtml}
+        </td>
+      </tr>`;
+    })
     .join("");
   return rows;
 }
@@ -227,7 +251,7 @@ function buildHtmlEmail(
 
   const priceTable = buildPriceTable(brief.price_snapshot ?? [], persona);
 
-  const sectorRows = buildSectorRows(brief, meta.sectors);
+  const sectorRows = buildSectorRows(brief, meta.sectors, meta.accentColor);
 
   const threeThingsRows = (brief.three_things ?? []).map((thing, i) => `
     <tr>
@@ -441,9 +465,17 @@ function buildTextEmail(brief: DailyBrief, recipientName: string, persona: Perso
   }
 
   const rationale = brief.action_rationale ?? {};
+  const digest = brief.sector_news_digest ?? {};
+  const outlook = brief.sector_forward_outlook ?? {};
   const relevantRows = meta.sectors
     .filter(k => rationale[k] && rationale[k].length > 5)
-    .map(k => `${(SECTOR_LABELS[k] ?? k).toUpperCase()}: ${rationale[k]}`);
+    .map(k => {
+      let entry = `${(SECTOR_LABELS[k] ?? k).toUpperCase()}: ${rationale[k]}`;
+      const headlines = (digest[k] ?? []).filter(h => h.length > 0);
+      if (headlines.length > 0) entry += `\nSources: ${headlines.join(" | ")}`;
+      if (outlook[k]) entry += `\nOutlook: ${outlook[k]}`;
+      return entry;
+    });
 
   if (relevantRows.length > 0) {
     lines.push("");
