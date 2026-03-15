@@ -371,6 +371,44 @@ function buildPrompt(
   return lines.join("\n");
 }
 
+interface PriceSnapshotEntry {
+  label: string;
+  price: number;
+  change_pct: number | null;
+  currency: string;
+}
+
+function buildPriceSnapshot(feeds: FeedPayload): PriceSnapshotEntry[] {
+  const snapshot: PriceSnapshotEntry[] = [];
+
+  const KEY_SYMBOLS = ["BZ=F", "CL=F", "NG=F", "ZW=F", "ZC=F", "ZS=F", "GC=F", "SI=F", "HG=F", "GBPUSD=X", "GBPEUR=X", "EURUSD=X", "DX=F", "BDI"];
+
+  const yahooPrices = feeds.sources.find(s => s.source_name === "Yahoo Finance" || s.source_name === "Stooq Market Data");
+  if (yahooPrices?.quotes?.length) {
+    for (const q of yahooPrices.quotes as Array<{ symbol: string; label: string; price: number | null; changePercent: number | null; currency: string | null }>) {
+      if (!KEY_SYMBOLS.includes(q.symbol) || q.price == null) continue;
+      snapshot.push({
+        label: q.label,
+        price: q.price,
+        change_pct: q.changePercent ?? null,
+        currency: q.currency ?? "USD",
+      });
+    }
+  }
+
+  const brentSrc = feeds.sources.find(s => s.source_name === "EIA Brent Crude") as Record<string, unknown> | undefined;
+  if (brentSrc?.success && brentSrc.current_price) {
+    snapshot.push({
+      label: "Brent Crude (EIA spot)",
+      price: brentSrc.current_price as number,
+      change_pct: (brentSrc.change_pct as number) ?? null,
+      currency: "USD",
+    });
+  }
+
+  return snapshot;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -492,6 +530,7 @@ Deno.serve(async (req: Request) => {
       model: openaiData.model ?? "gpt-4o",
       prompt_tokens: usage.prompt_tokens ?? null,
       completion_tokens: usage.completion_tokens ?? null,
+      price_snapshot: buildPriceSnapshot(feeds!),
     };
 
     const { data: inserted, error: insertErr } = await db

@@ -12,8 +12,16 @@ import {
   CalendarDays,
   MessageSquare,
   Mail,
+  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+interface PriceSnapshotEntry {
+  label: string;
+  price: number;
+  change_pct: number | null;
+  currency: string;
+}
 
 interface DailyBrief {
   id: string;
@@ -27,6 +35,7 @@ interface DailyBrief {
   model: string;
   prompt_tokens: number | null;
   completion_tokens: number | null;
+  price_snapshot: PriceSnapshotEntry[] | null;
 }
 
 type PersonaId = 'general' | 'trader' | 'agri' | 'logistics' | 'analyst';
@@ -125,6 +134,23 @@ function SectorRow({ sector, text }: { sector: string; text: string }) {
 
 const PERSONAS: PersonaId[] = ['general', 'trader', 'agri', 'logistics', 'analyst'];
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+
+async function fetchEmailPreviewHtml(brief: DailyBrief, persona: PersonaId): Promise<string> {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-morning-brief`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'preview', brief, persona }),
+  });
+  if (!res.ok) throw new Error(`Preview failed: ${res.status}`);
+  const json = await res.json();
+  return json.html ?? '';
+}
+
 export default function DailyBriefPreview() {
   const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [loading, setLoading] = useState(true);
@@ -132,6 +158,9 @@ export default function DailyBriefPreview() {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [persona, setPersona] = useState<PersonaId>('general');
+  const [viewMode, setViewMode] = useState<'data' | 'email'>('data');
+  const [emailHtml, setEmailHtml] = useState<string>('');
+  const [emailLoading, setEmailLoading] = useState(false);
 
   const fetchDates = useCallback(async () => {
     const { data } = await supabase
@@ -159,6 +188,16 @@ export default function DailyBriefPreview() {
   useEffect(() => { fetchDates(); }, []);
   useEffect(() => { if (selectedDate) fetchBrief(selectedDate); }, [selectedDate, fetchBrief]);
 
+  useEffect(() => {
+    if (viewMode !== 'email' || !brief) return;
+    setEmailLoading(true);
+    setEmailHtml('');
+    fetchEmailPreviewHtml(brief, persona)
+      .then(html => setEmailHtml(html))
+      .catch(() => setEmailHtml('<p style="color:#f87171;padding:24px;font-family:sans-serif;">Failed to load email preview.</p>'))
+      .finally(() => setEmailLoading(false));
+  }, [viewMode, brief, persona]);
+
   const generatedAt = brief ? new Date(brief.generated_at) : null;
   const totalTokens = brief ? (brief.prompt_tokens ?? 0) + (brief.completion_tokens ?? 0) : 0;
   const meta = PERSONA_META[persona];
@@ -173,6 +212,28 @@ export default function DailyBriefPreview() {
         <FileText size={13} className="text-slate-400" />
         <h2 className="text-xs font-bold text-slate-400 tracking-widest uppercase">Daily Brief Preview</h2>
         <div className="flex-1 h-px bg-slate-800" />
+        <div className="flex items-center gap-1 bg-slate-800/60 border border-slate-700/50 rounded-lg p-0.5">
+          <button
+            onClick={() => setViewMode('data')}
+            className={cn(
+              'flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-md transition-colors',
+              viewMode === 'data' ? 'bg-slate-700 text-slate-200' : 'text-slate-500 hover:text-slate-300'
+            )}
+          >
+            <FileText size={9} />
+            Data
+          </button>
+          <button
+            onClick={() => setViewMode('email')}
+            className={cn(
+              'flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-md transition-colors',
+              viewMode === 'email' ? 'bg-slate-700 text-slate-200' : 'text-slate-500 hover:text-slate-300'
+            )}
+          >
+            <Eye size={9} />
+            Email
+          </button>
+        </div>
         <button
           onClick={() => fetchBrief(selectedDate)}
           disabled={loading}
@@ -234,6 +295,35 @@ export default function DailyBriefPreview() {
           <AlertTriangle size={18} className="text-amber-500/60" />
           <p className="text-sm">No brief found for {selectedDate || 'today'}.</p>
           <p className="text-[11px] text-slate-600">The overnight pipeline may not have run yet.</p>
+        </div>
+      ) : viewMode === 'email' ? (
+        <div className="rounded-xl border border-slate-700/50 overflow-hidden bg-slate-950">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800 bg-slate-900">
+            <div className="flex items-center gap-2">
+              <Eye size={11} className="text-slate-500" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Email Preview</span>
+              <span className="text-[10px] text-slate-600">— {PERSONA_META[persona].label} edition</span>
+            </div>
+            {emailLoading && <Loader size={11} className="animate-spin text-slate-500" />}
+          </div>
+          {emailLoading ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-slate-500 text-sm">
+              <Loader size={14} className="animate-spin" />
+              Rendering email...
+            </div>
+          ) : emailHtml ? (
+            <iframe
+              srcDoc={emailHtml}
+              title="Email Preview"
+              className="w-full border-0"
+              style={{ height: '900px', background: '#060d1a' }}
+              sandbox="allow-same-origin"
+            />
+          ) : (
+            <div className="flex items-center justify-center py-16 text-slate-500 text-sm">
+              <span>No preview available — brief data may be missing.</span>
+            </div>
+          )}
         </div>
       ) : (
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: meta.accentColor + '33' }}>
