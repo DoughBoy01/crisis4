@@ -16,7 +16,6 @@ import ConflictRiskMap from './ConflictRiskMap';
 import SupplyChainExposure from './SupplyChainExposure';
 import ContingencyPlaybook from './ContingencyPlaybook';
 import DailyDiff from './DailyDiff';
-import DataFreshnessBar from './DataFreshnessBar';
 import { useMarketFeeds, getBrentFromFeeds, getFxFromFeeds } from '@/hooks/useMarketFeeds';
 import { useDailyBrief } from '@/hooks/useDailyBrief';
 import { useUserSettings } from '@/hooks/useUserSettings';
@@ -384,10 +383,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
             ROW 3: Main dashboard grid
             Left: Alerts + Actions  |  Right: Intel sidebar
         ═══════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5 items-start">
-
-          {/* ── LEFT COLUMN ── */}
-          <div className="space-y-5">
+        <div className="space-y-5">
 
             {/* ROI savings banner */}
             {topAction?.roi && (
@@ -434,7 +430,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
 
             </div>
 
-            {/* Action panel — full width within left column */}
+            {/* Action panel — full width */}
             <div className="rounded-xl border border-border/40 bg-slate-800/30 overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-slate-800/40">
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -455,10 +451,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
               </div>
             </div>
 
-          </div>
-
-          {/* ── RIGHT COLUMN: sticky intel sidebar ── */}
-          <div className="xl:sticky xl:top-[118px] space-y-4">
+            {/* Intel 3-col grid — full width */}
             <IntelSidebar
               feeds={feeds}
               loading={feedsLoading}
@@ -466,16 +459,6 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
               nextRefreshIn={nextRefreshIn}
               onRefresh={refreshFeeds}
             />
-            <div className="xl:hidden">
-              <DataFreshnessBar
-                feeds={feeds}
-                loading={feedsLoading}
-                secondsSinceRefresh={secondsSinceRefresh}
-                nextRefreshIn={nextRefreshIn}
-                onRefresh={refreshFeeds}
-              />
-            </div>
-          </div>
 
         </div>
 

@@ -178,29 +178,32 @@ export default function IntelSidebar({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+      {/* ── Col 1: Intelligence Accuracy ── */}
       <Card className="bg-slate-900/60 border-slate-700/50 overflow-hidden">
-        <CardHeader className="px-4 pt-3 pb-0 space-y-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {scoreIcon(overallScore, 14)}
-              <div>
-                <p className="text-xs font-bold text-slate-200">
+        <CardHeader className="px-3 pt-3 pb-0 space-y-0">
+          <div className="flex items-center justify-between gap-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              {scoreIcon(overallScore, 13)}
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-200 leading-tight">
                   Intelligence Accuracy
-                  <span className={cn("ml-2 font-mono", scoreColor(overallScore))}>
-                    {overallScore > 0 ? `${overallScore}%` : "—"}
-                  </span>
                 </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {overallScore > 0 ? overallLabel(overallScore) : "Fetching..."}{" "}
-                  · {sourcesOk}/{sourcesTotal} sources live
+                <p className={cn("text-[10px] font-mono font-semibold", scoreColor(overallScore))}>
+                  {overallScore > 0 ? `${overallScore}%` : "—"}
+                  {overallScore > 0 && (
+                    <span className="text-muted-foreground font-normal ml-1">
+                      · {overallLabel(overallScore)}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               {!loading && (
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
-                  <Clock size={10} />
+                <div className="flex items-center gap-0.5 text-[9px] text-muted-foreground/50">
+                  <Clock size={9} />
                   <span className="font-mono">{formatCountdown(Math.floor(nextRefreshIn))}</span>
                 </div>
               )}
@@ -210,15 +213,15 @@ export default function IntelSidebar({
                 className="text-muted-foreground hover:text-slate-300 transition-colors disabled:opacity-40"
                 title="Refresh all data sources"
               >
-                <RefreshCw size={13} className={cn(loading && "animate-spin")} />
+                <RefreshCw size={12} className={cn(loading && "animate-spin")} />
               </button>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="px-4 py-3 space-y-3">
+        <CardContent className="px-3 py-3 space-y-2.5">
           {feeds && (
-            <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div className="w-full h-1 bg-slate-700 rounded-full overflow-hidden">
               <div
                 className={cn("h-full rounded-full transition-all duration-500", scoreBarColor(overallScore))}
                 style={{ width: `${overallScore}%` }}
@@ -227,18 +230,18 @@ export default function IntelSidebar({
           )}
 
           {feeds && (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {(Object.keys(GROUP_LABELS) as (keyof typeof GROUP_LABELS)[]).map(groupKey => {
                 const sources = grouped[groupKey];
                 if (!sources || sources.length === 0) return null;
                 const { label, color, icon: Icon } = GROUP_LABELS[groupKey];
                 return (
                   <div key={groupKey}>
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <Icon size={10} className={color} />
-                      <span className={cn("text-[10px] font-semibold tracking-wider uppercase", color)}>{label}</span>
+                    <div className="flex items-center gap-1 mb-1">
+                      <Icon size={9} className={color} />
+                      <span className={cn("text-[9px] font-semibold tracking-wider uppercase", color)}>{label}</span>
                     </div>
-                    <div className="space-y-1 pl-2">
+                    <div className="space-y-0.5 pl-1.5">
                       {sources.map(src => (
                         <SourceRow key={src.source_name} src={src} />
                       ))}
@@ -250,13 +253,13 @@ export default function IntelSidebar({
           )}
 
           {criticalFailed.length > 0 && (
-            <div className="bg-red-950/30 border border-red-500/20 rounded-md px-2.5 py-2">
-              <div className="flex items-center gap-1.5 mb-1">
-                <AlertTriangle size={10} className="text-red-400" />
-                <span className="text-[10px] font-bold text-red-400 tracking-wider uppercase">Source Alert</span>
+            <div className="bg-red-950/30 border border-red-500/20 rounded-md px-2 py-1.5">
+              <div className="flex items-center gap-1 mb-0.5">
+                <AlertTriangle size={9} className="text-red-400" />
+                <span className="text-[9px] font-bold text-red-400 tracking-wider uppercase">Source Alert</span>
               </div>
-              <p className="text-[10px] text-red-300/80 leading-relaxed">
-                {criticalFailed.map(s => s.source_name.replace(" RSS", "")).join(", ")} — critical feed{criticalFailed.length > 1 ? "s" : ""} offline. Some signals may be incomplete.
+              <p className="text-[9px] text-red-300/80 leading-relaxed">
+                {criticalFailed.map(s => s.source_name.replace(" RSS", "")).join(", ")} — critical feed{criticalFailed.length > 1 ? "s" : ""} offline.
               </p>
             </div>
           )}
@@ -269,24 +272,27 @@ export default function IntelSidebar({
 
           {loading && !feeds && (
             <div className="flex items-center gap-2 py-1">
-              <RefreshCw size={11} className="animate-spin text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Fetching live sources...</span>
+              <RefreshCw size={10} className="animate-spin text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">Fetching live sources...</span>
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* ── Col 2: Signal Guide ── */}
       <Card className="bg-card overflow-hidden">
-        <CardContent className="px-4 py-3 space-y-1.5">
-          <p className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-2">Signal Guide</p>
+        <CardContent className="px-3 py-3 space-y-1.5">
+          <p className="text-[9px] font-bold text-muted-foreground tracking-wider uppercase mb-2">Signal Guide</p>
           {signalLegend.map(s => (
             <TooltipProvider key={s.signal} delayDuration={100}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 cursor-default group">
-                    <span className={cn("w-2 h-2 rounded-full shrink-0", s.dot)} />
-                    <span className={cn("text-[11px] font-bold tracking-widest w-14 shrink-0", s.color)}>{s.signal}</span>
-                    <p className="text-[10px] text-muted-foreground/60 leading-tight truncate">{s.desc}</p>
+                  <div className="flex items-start gap-1.5 cursor-default group">
+                    <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 mt-[3px]", s.dot)} />
+                    <div className="min-w-0">
+                      <span className={cn("text-[10px] font-bold tracking-widest block", s.color)}>{s.signal}</span>
+                      <p className="text-[9px] text-muted-foreground/60 leading-tight">{s.desc}</p>
+                    </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="left" className="max-w-[220px] text-xs">
@@ -299,35 +305,35 @@ export default function IntelSidebar({
         </CardContent>
       </Card>
 
+      {/* ── Col 3: The 8-Hour Advantage ── */}
       <Card className="bg-card overflow-hidden">
-        <CardContent className="px-4 py-3">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">The 8-Hour Advantage</p>
-          <div className="space-y-3">
+        <CardContent className="px-3 py-3">
+          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5">The 8-Hour Advantage</p>
+          <div className="space-y-2">
             {[
-              { time: "22:00 GMT", label: "Monitoring begins", desc: "Asia markets open. Overnight pipeline starts." },
-              { time: "02:00–05:00", label: "Events detected", desc: "Geopolitical signals, price moves, carrier alerts captured." },
-              { time: "Pre-market", label: "Brief generated", desc: "Signals translated into cited UK procurement actions." },
-              { time: "Market open", label: "Your analyst starts", desc: "The market has been moving for hours already." },
+              { time: "22:00", label: "Monitoring begins", desc: "Asia markets open. Overnight pipeline starts." },
+              { time: "02–05:00", label: "Events detected", desc: "Geopolitical signals, price moves, carrier alerts captured." },
+              { time: "Pre-mkt", label: "Brief generated", desc: "Signals translated into cited UK procurement actions." },
+              { time: "Open", label: "Your analyst starts", desc: "The market has been moving for hours already." },
             ].map(step => (
-              <div key={step.time} className="flex gap-3">
-                <div className="text-[10px] font-mono text-muted-foreground/60 w-16 shrink-0 pt-0.5">{step.time}</div>
+              <div key={step.time} className="flex gap-2">
+                <div className="text-[9px] font-mono text-muted-foreground/50 w-12 shrink-0 pt-0.5 leading-tight">{step.time}</div>
                 <div>
-                  <p className="text-xs font-semibold text-slate-300">{step.label}</p>
-                  <p className="text-xs text-muted-foreground/70 leading-tight">{step.desc}</p>
+                  <p className="text-[10px] font-semibold text-slate-300 leading-tight">{step.label}</p>
+                  <p className="text-[9px] text-muted-foreground/60 leading-tight">{step.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <Separator className="my-3 bg-border" />
+          <Separator className="my-2.5 bg-border" />
 
-          <div className="bg-slate-900/60 border border-border rounded-md p-3">
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              <span className="text-sky-400 font-semibold">ClearBid</span> bridges the gap between free but generic news and £20,000/yr Bloomberg terminals — purpose-built for UK SME procurement managers who need cited confidence at 7am.
-            </p>
-          </div>
+          <p className="text-[9px] text-muted-foreground/70 leading-relaxed">
+            <span className="text-sky-400 font-semibold">ClearBid</span> bridges the gap between generic news and £20k/yr Bloomberg terminals — purpose-built for UK SME procurement teams who need cited confidence at 7am.
+          </p>
         </CardContent>
       </Card>
+
     </div>
   );
 }
