@@ -172,8 +172,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!openaiKey) {
-      const fallback: DailyBrief = {
-        id: crypto.randomUUID(),
+      const fallbackRow = {
         brief_date: todayUtc,
         generated_at: new Date().toISOString(),
         feed_snapshot_at: feeds?.fetched_at ?? null,
@@ -189,7 +188,13 @@ Deno.serve(async (req: Request) => {
         prompt_tokens: null,
         completion_tokens: null,
       };
-      return new Response(JSON.stringify({ cached: false, brief: fallback }), {
+      const { data: savedFallback, error: fallbackErr } = await db
+        .from("daily_brief")
+        .upsert(fallbackRow, { onConflict: "brief_date" })
+        .select()
+        .maybeSingle();
+      if (fallbackErr) throw new Error(`DB insert error: ${fallbackErr.message}`);
+      return new Response(JSON.stringify({ cached: false, brief: savedFallback as DailyBrief }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

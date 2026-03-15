@@ -79,26 +79,46 @@ export default function DevControlsPanel() {
   async function sendEmailOnly() {
     setRunStatus('running');
     setResult(null);
+    const logs: StepLog[] = [];
     try {
-      const data = await callEdge('send-morning-brief', { action: 'send_now' }) as Record<string, unknown>;
-      const sent = data.sent as number | undefined;
-      const failed = data.failed as number | undefined;
-      const err = data.error as string | undefined;
-      const msg = data.message as string | undefined;
-      const success = !err;
-      setResult({
-        success,
-        logs: [{
-          step: 'send-morning-brief',
-          status: success ? 'ok' : 'error',
-          detail: err ?? msg ?? `Sent ${sent ?? 0}, failed ${failed ?? 0}`,
-        }],
-        error: err,
+      const t0 = Date.now();
+      const briefCheck = await callEdge('ai-brief', {}) as Record<string, unknown>;
+      const briefErr = briefCheck.error as string | undefined;
+      const briefCached = briefCheck.cached as boolean | undefined;
+      const hasBrief = !!briefCheck.brief;
+      if (briefErr || !hasBrief) {
+        const detail = briefErr ?? 'ai-brief returned no brief';
+        logs.push({ step: 'ai-brief', status: 'error', detail, duration_ms: Date.now() - t0 });
+        setResult({ success: false, logs, error: detail });
+        setRunStatus('error');
+        setLogsOpen(true);
+        return;
+      }
+      logs.push({
+        step: 'ai-brief',
+        status: 'ok',
+        detail: briefCached ? 'Using cached brief for today' : 'Brief generated',
+        duration_ms: Date.now() - t0,
       });
-      setRunStatus(success ? 'done' : 'error');
+
+      const t1 = Date.now();
+      const sendData = await callEdge('send-morning-brief', { action: 'send_now' }) as Record<string, unknown>;
+      const sent = sendData.sent as number | undefined;
+      const failed = sendData.failed as number | undefined;
+      const sendErr = sendData.error as string | undefined;
+      const msg = sendData.message as string | undefined;
+      const sendOk = !sendErr;
+      logs.push({
+        step: 'send-morning-brief',
+        status: sendOk ? 'ok' : 'error',
+        detail: sendErr ?? msg ?? `Sent ${sent ?? 0}, failed ${failed ?? 0}`,
+        duration_ms: Date.now() - t1,
+      });
+      setResult({ success: sendOk, logs, error: sendErr });
+      setRunStatus(sendOk ? 'done' : 'error');
       setLogsOpen(true);
     } catch (e) {
-      setResult({ success: false, error: String(e) });
+      setResult({ success: false, error: String(e), logs });
       setRunStatus('error');
     }
   }
