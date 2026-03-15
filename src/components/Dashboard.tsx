@@ -16,11 +16,16 @@ import ConflictRiskMap from './ConflictRiskMap';
 import SupplyChainExposure from './SupplyChainExposure';
 import ContingencyPlaybook from './ContingencyPlaybook';
 import DailyDiff from './DailyDiff';
+import PersonaBar, { type PersonaId } from './PersonaBar';
+import PersonaHero from './PersonaHero';
+import ShippingLaneStatus from './ShippingLaneStatus';
+import CrisisTimeline from './CrisisTimeline';
+import CrisisCorrelationTable from './CrisisCorrelationTable';
 import { useMarketFeeds, getBrentFromFeeds, getFxFromFeeds } from '@/hooks/useMarketFeeds';
 import { useDailyBrief } from '@/hooks/useDailyBrief';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { useHistoricalContext } from '@/hooks/useHistoricalContext';
-import { ChevronDown, ChevronUp, Shield, BarChart2, Newspaper, Filter } from 'lucide-react';
+import { ChevronDown, ChevronUp, Shield, BarChart2, Newspaper, Filter, Ship, Clock, TrendingUp } from 'lucide-react';
 import CommodityMiniChart from './CommodityMiniChart';
 
 const NEWS_SOURCES_LIST = [
@@ -38,6 +43,11 @@ const NEWS_SOURCES_LIST = [
   "Reuters Commodities RSS",
   "ReliefWeb Conflict RSS",
   "Shipping RSS",
+  "Rigzone RSS",
+  "World Grain RSS",
+  "Fertilizer RSS",
+  "Freight Rates RSS",
+  "Metals RSS",
 ];
 
 const categories: { id: MarketCategory; label: string; description: string }[] = [
@@ -138,9 +148,13 @@ function CollapsibleSection({
 
 export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: () => void }) {
   const [activeSector, setActiveSector] = useState<SectorId | null>(null);
+  const [activePersona, setActivePersona] = useState<PersonaId>('general');
   const [conflictOpen, setConflictOpen] = useState(true);
   const [newsOpen, setNewsOpen] = useState(false);
   const [marketsOpen, setMarketsOpen] = useState(true);
+  const [shippingOpen, setShippingOpen] = useState(true);
+  const [timelineOpen, setTimelineOpen] = useState(true);
+  const [correlationOpen, setCorrelationOpen] = useState(false);
   const { settings, updateTimezone } = useUserSettings();
   const timezone = settings.timezone;
 
@@ -335,9 +349,10 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
         </div>
       )}
 
-      {/* ── SECTOR FILTER BAR ── */}
+      {/* ── PERSONA + SECTOR FILTER BAR ── */}
       <div className="border-b border-border/30 bg-background/95 backdrop-blur-sm sticky top-14 z-40">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-2">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-2 space-y-2">
+          <PersonaBar active={activePersona} onChange={setActivePersona} />
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 shrink-0">
               <Filter size={11} className="text-muted-foreground/50" />
@@ -369,6 +384,18 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
           dailyBrief={dailyBrief}
           briefLoading={briefLoading}
           briefGenerating={briefGenerating}
+        />
+
+        {/* ═══════════════════════════════════════════════════
+            PERSONA HERO — context-specific summary card
+        ═══════════════════════════════════════════════════ */}
+        <PersonaHero
+          persona={activePersona}
+          feeds={feeds}
+          alerts={filteredAlerts}
+          actions={actionItems}
+          conflictZones={conflictZones}
+          loading={feedsLoading}
         />
 
         {/* ═══════════════════════════════════════════════════
@@ -555,6 +582,133 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
               </div>
             </div>
           </div>
+
+          {/* ── PERSONA-SPECIFIC PANELS ── */}
+
+          {/* TRADER: Crisis timeline + market correlations */}
+          {activePersona === 'trader' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <CollapsibleSection
+                icon={Clock}
+                label="Crisis Timeline"
+                sublabel="— event-to-market attribution"
+                open={timelineOpen}
+                onToggle={() => setTimelineOpen(o => !o)}
+                badge={
+                  conflictZones.some(z => z.riskLevel === 'CRITICAL') ? (
+                    <span className="text-[9px] font-bold text-red-400 bg-red-500/10 border border-red-500/30 px-1.5 py-0.5 rounded animate-pulse">
+                      CRITICAL
+                    </span>
+                  ) : null
+                }
+              >
+                <CrisisTimeline feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} />
+              </CollapsibleSection>
+              <CollapsibleSection
+                icon={BarChart2}
+                label="Crisis-to-Market Correlations"
+                sublabel="— historical precedents"
+                open={correlationOpen}
+                onToggle={() => setCorrelationOpen(o => !o)}
+              >
+                <CrisisCorrelationTable conflictZones={conflictZones} />
+              </CollapsibleSection>
+            </div>
+          )}
+
+          {/* LOGISTICS: Shipping lanes + crisis timeline */}
+          {activePersona === 'logistics' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <CollapsibleSection
+                icon={Ship}
+                label="Shipping Lane Status"
+                sublabel="— RAG-rated chokepoints"
+                open={shippingOpen}
+                onToggle={() => setShippingOpen(o => !o)}
+              >
+                <ShippingLaneStatus feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} />
+              </CollapsibleSection>
+              <CollapsibleSection
+                icon={Clock}
+                label="Crisis Timeline"
+                sublabel="— freight & security events"
+                open={timelineOpen}
+                onToggle={() => setTimelineOpen(o => !o)}
+              >
+                <CrisisTimeline feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} />
+              </CollapsibleSection>
+            </div>
+          )}
+
+          {/* AGRI: Shipping lanes (Black Sea) + correlation table */}
+          {activePersona === 'agri' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <CollapsibleSection
+                icon={Ship}
+                label="Shipping Lane Status"
+                sublabel="— Black Sea · grain routes"
+                open={shippingOpen}
+                onToggle={() => setShippingOpen(o => !o)}
+              >
+                <ShippingLaneStatus feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} />
+              </CollapsibleSection>
+              <CollapsibleSection
+                icon={BarChart2}
+                label="Crisis-to-Market Correlations"
+                sublabel="— grain & fertilizer precedents"
+                open={correlationOpen}
+                onToggle={() => setCorrelationOpen(o => !o)}
+              >
+                <CrisisCorrelationTable conflictZones={conflictZones} />
+              </CollapsibleSection>
+            </div>
+          )}
+
+          {/* ANALYST: All four panels in 2x2 grid */}
+          {activePersona === 'analyst' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <CollapsibleSection
+                icon={Clock}
+                label="Crisis Timeline"
+                sublabel="— event-to-market attribution"
+                open={timelineOpen}
+                onToggle={() => setTimelineOpen(o => !o)}
+              >
+                <CrisisTimeline feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} />
+              </CollapsibleSection>
+              <CollapsibleSection
+                icon={BarChart2}
+                label="Crisis-to-Market Correlations"
+                sublabel="— citable · client-ready"
+                open={correlationOpen}
+                onToggle={() => setCorrelationOpen(o => !o)}
+              >
+                <CrisisCorrelationTable conflictZones={conflictZones} />
+              </CollapsibleSection>
+              <CollapsibleSection
+                icon={Ship}
+                label="Shipping Lane Status"
+                sublabel="— RAG-rated · for risk reports"
+                open={shippingOpen}
+                onToggle={() => setShippingOpen(o => !o)}
+              >
+                <ShippingLaneStatus feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} />
+              </CollapsibleSection>
+            </div>
+          )}
+
+          {/* GENERAL: Crisis timeline (collapsed by default) */}
+          {activePersona === 'general' && (
+            <CollapsibleSection
+              icon={Clock}
+              label="Crisis Timeline"
+              sublabel="— what happened overnight"
+              open={timelineOpen}
+              onToggle={() => setTimelineOpen(o => !o)}
+            >
+              <CrisisTimeline feeds={feeds} conflictZones={conflictZones} loading={feedsLoading} />
+            </CollapsibleSection>
+          )}
 
           {/* News feed — collapsible to save vertical space */}
           <CollapsibleSection
