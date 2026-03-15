@@ -121,6 +121,29 @@ export function useMarketFeeds(): FeedState {
   }, [fetchFeeds]);
 
   useEffect(() => {
+    const channel = supabase
+      .channel("feed_cache_updates")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "feed_cache" },
+        (payload) => {
+          const updated = payload.new as { payload: FeedPayload; fetched_at: string } | null;
+          if (!updated?.payload) return;
+          setData(updated.payload);
+          setLastFetchedAt(updated.fetched_at ?? updated.payload.fetched_at);
+          lastFetchTimeRef.current = Date.now();
+          setSecondsSinceRefresh(0);
+          setNextRefreshIn(AUTO_REFRESH_MS / 1000);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
     const ticker = setInterval(() => {
       if (lastFetchTimeRef.current) {
         const elapsed = Math.floor((Date.now() - lastFetchTimeRef.current) / 1000);
