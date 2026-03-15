@@ -340,6 +340,22 @@ function buildPriceTable(snapshot: PriceSnapshotEntry[], persona: PersonaId): st
     </table>`;
 }
 
+const SECTOR_ICONS: Record<string, string> = {
+  energy: "&#9889;",
+  agricultural: "&#127806;",
+  freight: "&#9875;",
+  fertilizer: "&#127807;",
+  metals: "&#9874;",
+  fx: "&#163;",
+  policy: "&#127963;",
+};
+
+function parseSourceTag(headline: string): { source: string; text: string } {
+  const m = /^\[([^\]]+)\]\s*(.*)$/.exec(headline);
+  if (m) return { source: m[1], text: m[2] };
+  return { source: "", text: headline };
+}
+
 function buildSectorRows(brief: DailyBrief, sectors: string[], accentColor: string): string {
   const rationale = brief.action_rationale ?? {};
   const digest = brief.sector_news_digest ?? {};
@@ -347,29 +363,55 @@ function buildSectorRows(brief: DailyBrief, sectors: string[], accentColor: stri
 
   const rows = sectors
     .filter(k => rationale[k] && rationale[k].length > 5)
-    .map(k => {
+    .map((k, idx) => {
       const headlines = (digest[k] ?? []).filter(h => h.length > 0);
       const forwardText = outlook[k] ?? "";
+      const isLast = idx === sectors.filter(s => rationale[s] && rationale[s].length > 5).length - 1;
+      const icon = SECTOR_ICONS[k] ?? "&#8226;";
 
       const headlinesHtml = headlines.length > 0
-        ? `<div style="margin-top:10px;padding:8px 10px;background:#060d1a;border-radius:5px;border-left:2px solid #334155;">
-            ${headlines.map(h => `<p style="margin:0 0 4px;font-size:11px;color:#64748b;line-height:1.5;font-style:italic;">${h}</p>`).join("")}
+        ? `<div style="margin-top:12px;">
+            ${headlines.map(h => {
+              const { source, text } = parseSourceTag(h);
+              return `<table cellpadding="0" cellspacing="0" style="margin-bottom:6px;width:100%;">
+                <tr>
+                  <td style="vertical-align:top;padding-right:8px;white-space:nowrap;">
+                    ${source ? `<span style="display:inline-block;background:#0f172a;border:1px solid #1e293b;color:#475569;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 6px;border-radius:3px;white-space:nowrap;">${source.replace(" RSS", "").replace(" Business", "")}</span>` : ""}
+                  </td>
+                  <td style="font-size:12px;color:#64748b;line-height:1.5;font-style:italic;">${text}</td>
+                </tr>
+              </table>`;
+            }).join("")}
           </div>`
         : "";
 
-      const forwardHtml = forwardText
-        ? `<p style="margin:10px 0 0;font-size:12px;color:${accentColor};line-height:1.6;font-weight:600;">&#8594; ${forwardText}</p>`
+      const forwardHtml = forwardText && forwardText.length > 5
+        ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
+            <tr>
+              <td style="background:#060f1f;border:1px solid #1e3a5f;border-left:3px solid ${accentColor};border-radius:4px;padding:8px 12px;">
+                <span style="font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.08em;">2-5 Day Outlook</span>
+                <p style="margin:4px 0 0;font-size:12px;color:#93c5fd;line-height:1.6;">${forwardText}</p>
+              </td>
+            </tr>
+          </table>`
         : "";
 
       return `
       <tr>
-        <td style="padding:14px 16px;border-bottom:1px solid #1e293b;vertical-align:top;width:130px;white-space:nowrap;">
-          <span style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;">${SECTOR_LABELS[k] ?? k}</span>
-        </td>
-        <td style="padding:14px 16px;border-bottom:1px solid #1e293b;font-size:13px;color:#cbd5e1;line-height:1.65;">
-          ${rationale[k]}
-          ${headlinesHtml}
-          ${forwardHtml}
+        <td colspan="2" style="padding:0;${isLast ? "" : "border-bottom:1px solid #1e293b;"}">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding:16px 16px 4px;vertical-align:top;width:124px;">
+                <span style="font-size:16px;line-height:1;">${icon}</span>
+                <p style="margin:4px 0 0;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;">${SECTOR_LABELS[k] ?? k}</p>
+              </td>
+              <td style="padding:16px 16px 16px 0;vertical-align:top;">
+                <p style="margin:0;font-size:13px;color:#cbd5e1;line-height:1.7;">${rationale[k]}</p>
+                ${headlinesHtml}
+                ${forwardHtml}
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>`;
     })
@@ -407,17 +449,23 @@ function buildHtmlEmail(
     ? buildCompoundingRiskBlock(brief.compounding_risk, meta.accentColor)
     : "";
 
-  const threeThingsRows = (brief.three_things ?? []).map((thing, i) => {
+  const threeThingsBlocks = (brief.three_things ?? []).map((thing, i) => {
     const isObj = thing && typeof thing === "object" && !Array.isArray(thing);
     const title = isObj ? (thing as Record<string, string>).title ?? "" : "";
     const body = isObj ? (thing as Record<string, string>).body ?? String(thing) : String(thing);
+    const isLast = i === (brief.three_things ?? []).length - 1;
     return `
-    <tr>
-      <td style="padding:10px 0;vertical-align:top;width:36px;">
-        <span style="display:inline-block;width:26px;height:26px;background:${meta.accentColor};color:#0f172a;font-size:12px;font-weight:800;border-radius:50%;text-align:center;line-height:26px;">${i + 1}</span>
-      </td>
-      <td style="padding:10px 0 10px 8px;font-size:14px;color:#e2e8f0;line-height:1.7;">${title ? `<strong style="color:#f1f5f9;">${title}</strong><br style="line-height:2;" />` : ""}${body}</td>
-    </tr>`;
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:${isLast ? "0" : "10px"};">
+      <tr>
+        <td style="vertical-align:top;width:40px;padding-top:2px;">
+          <span style="display:inline-block;width:28px;height:28px;background:${meta.accentColor};color:#0f172a;font-size:13px;font-weight:800;border-radius:50%;text-align:center;line-height:28px;">${i + 1}</span>
+        </td>
+        <td style="vertical-align:top;background:#060f1f;border:1px solid #1e293b;border-left:3px solid ${meta.accentColor};border-radius:6px;padding:12px 16px;">
+          ${title ? `<p style="margin:0 0 6px;font-size:14px;font-weight:700;color:#f1f5f9;line-height:1.3;">${title}</p>` : ""}
+          <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.7;">${body}</p>
+        </td>
+      </tr>
+    </table>`;
   }).join("");
 
   const personaTagHtml = persona !== "general"
@@ -488,19 +536,30 @@ function buildHtmlEmail(
 
         <!-- Greeting + Narrative -->
         <tr>
-          <td style="background:#0d1627;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};padding:20px 32px 20px;">
-            <p style="margin:0 0 12px;font-size:13px;color:#64748b;">${greeting}</p>
-            <p style="margin:0;font-size:15px;font-weight:500;color:#e2e8f0;line-height:1.7;">${brief.narrative}</p>
-            ${brief.geopolitical_context ? `
-            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:14px;">
-              <tr>
-                <td style="border-left:2px solid ${meta.accentColor};padding:2px 0 2px 14px;">
-                  <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.65;">${brief.geopolitical_context}</p>
-                </td>
-              </tr>
-            </table>` : ""}
+          <td style="background:#0d1627;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};padding:24px 32px 20px;">
+            <p style="margin:0 0 14px;font-size:13px;color:#64748b;">${greeting}</p>
+            <p style="margin:0;font-size:15px;font-weight:500;color:#e2e8f0;line-height:1.75;">${brief.narrative}</p>
           </td>
         </tr>
+
+        ${brief.geopolitical_context ? `
+        <!-- Geopolitical Context -->
+        <tr>
+          <td style="background:#0d1627;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};padding:0 32px 20px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#0c1a0a;border:1px solid #1e3b1e;border-left:3px solid #ef4444;border-radius:6px;overflow:hidden;">
+              <tr>
+                <td style="padding:6px 14px;background:#1a0a0a;border-bottom:1px solid #2d1515;">
+                  <span style="font-size:9px;font-weight:800;color:#ef4444;letter-spacing:0.14em;text-transform:uppercase;">&#9679;&nbsp; Geopolitical Risk Context</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:12px 14px;">
+                  <p style="margin:0;font-size:13px;color:#fca5a5;line-height:1.7;">${brief.geopolitical_context}</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>` : ""}
 
         ${priceTable ? `
         <!-- Price Snapshot -->
@@ -511,23 +570,30 @@ function buildHtmlEmail(
           </td>
         </tr>` : ""}
 
-        ${threeThingsRows ? `
+        ${threeThingsBlocks ? `
         <!-- 3 Things -->
         <tr>
-          <td style="background:#0a111e;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};border-top:1px solid #1e293b;padding:20px 32px 24px;">
-            <p style="margin:0 0 14px;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.12em;">3 Things That Matter Today</p>
-            <table width="100%" cellpadding="0" cellspacing="0">
-              ${threeThingsRows}
+          <td style="background:#0a111e;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};border-top:1px solid #1e293b;padding:22px 32px 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
+              <tr>
+                <td>
+                  <span style="font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.12em;">3 Things That Matter Today</span>
+                </td>
+                <td align="right">
+                  <span style="font-size:9px;font-weight:700;color:${meta.accentColor};text-transform:uppercase;letter-spacing:0.1em;">For your role specifically</span>
+                </td>
+              </tr>
             </table>
+            ${threeThingsBlocks}
           </td>
         </tr>` : ""}
 
         ${sectorRows ? `
         <!-- Sector Intelligence -->
         <tr>
-          <td style="background:#0d1627;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};border-top:1px solid #1e293b;padding:20px 32px 24px;">
-            <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:${meta.accentColor};text-transform:uppercase;letter-spacing:0.12em;">${meta.focusLabel}</p>
-            <p style="margin:0 0 14px;font-size:12px;color:#475569;">${meta.focusDesc}</p>
+          <td style="background:#0d1627;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};border-top:1px solid #1e293b;padding:22px 32px 24px;">
+            <p style="margin:0 0 3px;font-size:10px;font-weight:700;color:${meta.accentColor};text-transform:uppercase;letter-spacing:0.12em;">${meta.focusLabel}</p>
+            <p style="margin:0 0 16px;font-size:12px;color:#475569;">${meta.focusDesc}</p>
             <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #1e293b;border-radius:8px;overflow:hidden;">
               ${sectorRows}
             </table>
@@ -537,26 +603,48 @@ function buildHtmlEmail(
         ${(brief.procurement_actions ?? []).length > 0 ? `
         <!-- Procurement Actions -->
         <tr>
-          <td style="background:#0a111e;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};border-top:1px solid #1e293b;padding:20px 32px 24px;">
-            <p style="margin:0 0 14px;font-size:10px;font-weight:700;color:${meta.accentColor};text-transform:uppercase;letter-spacing:0.12em;">Supporting Actions</p>
-            <table width="100%" cellpadding="0" cellspacing="0">
-              ${(brief.procurement_actions ?? []).map((action, i) => `
-              <tr>
-                <td style="padding:9px 0;vertical-align:top;width:28px;">
-                  <span style="display:inline-block;width:20px;height:20px;background:#1e293b;border:1px solid ${meta.accentColor};color:${meta.accentColor};font-size:10px;font-weight:800;border-radius:4px;text-align:center;line-height:20px;">${i + 1}</span>
-                </td>
-                <td style="padding:9px 0 9px 10px;font-size:13px;color:#cbd5e1;line-height:1.65;border-bottom:1px solid #1e293b;">${action}</td>
-              </tr>`).join("")}
-            </table>
+          <td style="background:#0a111e;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};border-top:1px solid #1e293b;padding:22px 32px 24px;">
+            <p style="margin:0 0 16px;font-size:10px;font-weight:700;color:${meta.accentColor};text-transform:uppercase;letter-spacing:0.12em;">Recommended Actions</p>
+            ${(brief.procurement_actions ?? []).map((action, i) => {
+              const upper = action.toUpperCase();
+              let badgeBg = "#1e293b"; let badgeColor = "#64748b"; let badgeLabel = `${i + 1}`;
+              if (upper.includes("BUY") || upper.includes("PURCHASE") || upper.includes("LOCK IN") || upper.includes("CONTRACT")) {
+                badgeBg = "#052e16"; badgeColor = "#34d399"; badgeLabel = "BUY";
+              } else if (upper.includes("MONITOR") || upper.includes("WATCH") || upper.includes("TRACK")) {
+                badgeBg = "#172554"; badgeColor = "#60a5fa"; badgeLabel = "WATCH";
+              } else if (upper.includes("HEDGE") || upper.includes("FORWARD") || upper.includes("FIX")) {
+                badgeBg = "#1c1207"; badgeColor = "#fbbf24"; badgeLabel = "HEDGE";
+              } else if (upper.includes("ALERT") || upper.includes("ACT") || upper.includes("URGENT") || upper.includes("REVIEW")) {
+                badgeBg = "#1c0a0a"; badgeColor = "#f87171"; badgeLabel = "ACT";
+              }
+              return `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:${i < (brief.procurement_actions ?? []).length - 1 ? "10px" : "0"};">
+                <tr>
+                  <td style="vertical-align:top;padding-right:10px;white-space:nowrap;width:52px;">
+                    <span style="display:inline-block;background:${badgeBg};border:1px solid ${badgeColor};color:${badgeColor};font-size:9px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;padding:3px 7px;border-radius:4px;">${badgeLabel}</span>
+                  </td>
+                  <td style="vertical-align:top;font-size:13px;color:#cbd5e1;line-height:1.7;">${action}</td>
+                </tr>
+              </table>`;
+            }).join("")}
           </td>
         </tr>` : ""}
 
         ${brief.market_outlook ? `
         <!-- Market Outlook -->
         <tr>
-          <td style="background:#0d1627;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};border-top:1px solid #1e293b;padding:20px 32px 24px;">
-            <p style="margin:0 0 10px;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.12em;">What to Watch Today — 07:00–17:00 GMT</p>
-            <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.7;">${brief.market_outlook}</p>
+          <td style="background:#0d1627;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};border-top:1px solid #1e293b;padding:22px 32px 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:12px;">
+              <tr>
+                <td>
+                  <span style="font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.12em;">What to Watch Today</span>
+                  <span style="font-size:10px;color:#334155;margin-left:8px;">07:00 &ndash; 17:00 GMT</span>
+                </td>
+                <td align="right">
+                  <span style="display:inline-block;background:#0c1a2e;border:1px solid #f59e0b;color:#f59e0b;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px;">&#9679; LIVE SESSION</span>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.75;">${brief.market_outlook}</p>
           </td>
         </tr>` : ""}
 
