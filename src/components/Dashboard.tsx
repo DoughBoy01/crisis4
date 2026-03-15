@@ -42,10 +42,11 @@ const NEWS_SOURCES_LIST = [
 
 const categories: { id: MarketCategory; label: string; description: string }[] = [
   { id: 'energy', label: 'Energy', description: 'Oil · Gas · Red Diesel' },
+  { id: 'metals', label: 'Metals', description: 'Steel · Aluminium' },
+  { id: 'fx', label: 'FX', description: 'GBP/USD · GBP/EUR · USD Index' },
   { id: 'freight', label: 'Freight', description: 'Dry Bulk · Container · War Risk' },
   { id: 'fertilizer', label: 'Fertilizers', description: 'Urea · AN · Phosphate' },
   { id: 'agricultural', label: 'Agricultural', description: 'Cereals · Oilseeds' },
-  { id: 'metals', label: 'Metals', description: 'Steel · Aluminium' },
 ];
 
 const SUBSCRIPTION_COST_ANNUAL = 588;

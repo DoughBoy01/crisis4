@@ -16,6 +16,7 @@ const categoryColors: Record<MarketCategory, string> = {
   fertilizer: 'text-lime-400',
   agricultural: 'text-amber-400',
   metals: 'text-slate-300',
+  fx: 'text-teal-400',
 };
 
 const categoryDots: Record<MarketCategory, string> = {
@@ -24,6 +25,7 @@ const categoryDots: Record<MarketCategory, string> = {
   fertilizer: 'bg-lime-400',
   agricultural: 'bg-amber-400',
   metals: 'bg-slate-300',
+  fx: 'bg-teal-400',
 };
 
 export default function MarketSection({ category, label, description, items, activeSector }: MarketSectionProps) {

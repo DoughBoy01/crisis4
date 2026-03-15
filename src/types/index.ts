@@ -48,7 +48,7 @@ export interface MarketItem {
   seasonalContext?: SeasonalContext;
 }
 
-export type MarketCategory = 'energy' | 'freight' | 'fertilizer' | 'agricultural' | 'metals';
+export type MarketCategory = 'energy' | 'freight' | 'fertilizer' | 'agricultural' | 'metals' | 'fx';
 
 export interface MorningAlert {
   id: string;
