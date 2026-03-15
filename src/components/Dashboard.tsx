@@ -233,13 +233,13 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
     loading: briefLoading,
     generating: briefGenerating,
     trigger: triggerBrief,
-  } = useDailyBrief();
+  } = useDailyBrief(activePersona);
 
   useEffect(() => {
     if (feeds && !feedsLoading && !dailyBrief && !briefLoading && !briefGenerating) {
-      triggerBrief(feeds);
+      triggerBrief(feeds, activePersona);
     }
-  }, [feeds, feedsLoading, dailyBrief, briefLoading, briefGenerating, triggerBrief]);
+  }, [feeds, feedsLoading, dailyBrief, briefLoading, briefGenerating, triggerBrief, activePersona]);
 
   const brentSrc = getBrentFromFeeds(feeds);
   const fxSrc = getFxFromFeeds(feeds);

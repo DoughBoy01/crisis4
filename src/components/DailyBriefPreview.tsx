@@ -167,23 +167,29 @@ export default function DailyBriefPreview() {
       .from('daily_brief')
       .select('brief_date')
       .order('brief_date', { ascending: false })
-      .limit(14);
-    const dates = (data ?? []).map((d: { brief_date: string }) => d.brief_date);
+      .limit(70);
+    const seen = new Set<string>();
+    const dates: string[] = [];
+    for (const d of (data ?? []) as { brief_date: string }[]) {
+      if (!seen.has(d.brief_date)) { seen.add(d.brief_date); dates.push(d.brief_date); }
+      if (dates.length >= 14) break;
+    }
     setAvailableDates(dates);
     if (dates.length > 0 && !selectedDate) setSelectedDate(dates[0]);
   }, [selectedDate]);
 
-  const fetchBrief = useCallback(async (date: string) => {
+  const fetchBrief = useCallback(async (date: string, p: PersonaId = persona) => {
     if (!date) return;
     setLoading(true);
     const { data } = await supabase
       .from('daily_brief')
       .select('*')
       .eq('brief_date', date)
+      .eq('persona', p)
       .maybeSingle();
     setBrief(data as DailyBrief | null);
     setLoading(false);
-  }, []);
+  }, [persona]);
 
   useEffect(() => { fetchDates(); }, []);
   useEffect(() => { if (selectedDate) fetchBrief(selectedDate); }, [selectedDate, fetchBrief]);

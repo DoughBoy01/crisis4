@@ -1,4 +1,4 @@
-import { Activity, Globe, AlertTriangle, Rss, Clock, Sparkles, Loader2, TrendingUp } from 'lucide-react';
+import { Activity, Globe, AlertTriangle, Rss, Clock, Sparkles, Loader2, TrendingUp, Layers } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { OvernightStat } from '../types';
 import type { DailyBrief } from '@/hooks/useDailyBrief';
@@ -101,6 +101,7 @@ export default function MorningBrief({
   const aiNarrative = dailyBrief?.narrative;
   const threeThings = dailyBrief?.three_things ?? [];
   const geopolitical = dailyBrief?.geopolitical_context;
+  const compoundingRisk = dailyBrief?.compounding_risk;
   const fallbackHeadline = buildFallbackHeadline(urgentCount, buyCount, watchCount, topMover);
   const isGenerating = briefGenerating;
   const hasAI = !!aiNarrative && aiNarrative.length > 10;
@@ -201,6 +202,12 @@ export default function MorningBrief({
                 <p className="text-xs text-slate-400 leading-relaxed pl-[22px] border-l border-border/30">
                   {geopolitical}
                 </p>
+              )}
+              {compoundingRisk && (
+                <div className="flex items-start gap-2 mt-2 rounded-lg border border-amber-500/25 bg-amber-950/20 px-3 py-2">
+                  <Layers size={11} className="text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-200/80 leading-relaxed font-medium">{compoundingRisk}</p>
+                </div>
               )}
             </div>
           ) : (

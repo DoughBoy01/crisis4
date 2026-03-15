@@ -80,14 +80,14 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // ── Step 2: Generate AI brief ─────────────────────────────────────────────
+    // ── Step 2: Generate AI briefs for all personas ───────────────────────────
     const step2Start = Date.now();
     let briefGenerated = false;
 
     if (existingBrief && !force) {
       logs.push({ step: "ai-brief", status: "skipped", detail: `Brief already exists for ${todayUtc} (generated at ${existingBrief.generated_at})` });
     } else {
-      const briefBody: Record<string, unknown> = {};
+      const briefBody: Record<string, unknown> = { all_personas: true };
       if (feedData) briefBody.feeds = feedData;
       if (force) briefBody.force = true;
 
@@ -96,11 +96,12 @@ Deno.serve(async (req: Request) => {
 
       if (result.ok) {
         briefGenerated = true;
-        const detail = result.data as { source?: string; model?: string };
+        const detail = result.data as { all_personas?: boolean; results?: Record<string, unknown> };
+        const personaCount = detail?.results ? Object.keys(detail.results).length : 0;
         logs.push({
           step: "ai-brief",
           status: "ok",
-          detail: `Brief generated (model: ${detail?.model ?? "unknown"}, source: ${detail?.source ?? "ai"})`,
+          detail: `Persona briefs generated: ${personaCount} personas`,
           duration_ms,
         });
       } else {
