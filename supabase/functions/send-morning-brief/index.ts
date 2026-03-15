@@ -569,9 +569,18 @@ function buildHtmlEmail(
           </td>
         </tr>
 
+        <!-- Disclaimer -->
+        <tr>
+          <td style="background:#060d1a;border-left:1px solid ${meta.borderColor};border-right:1px solid ${meta.borderColor};border-top:1px solid #1e293b;padding:14px 32px;">
+            <p style="margin:0;font-size:11px;color:#334155;line-height:1.65;">
+              <strong style="color:#475569;font-weight:600;">For information only.</strong> This brief is AI-generated market intelligence intended to support your own procurement judgement &mdash; not financial, legal, or trading advice. Signals, prices, and cost estimates may contain errors or omissions. Always verify with your own sources and advisors before acting. DawnSignal accepts no liability for decisions made in reliance on this content.
+            </p>
+          </td>
+        </tr>
+
         <!-- Footer -->
         <tr>
-          <td style="background:#060d1a;border:1px solid ${meta.borderColor};border-top:none;border-radius:0 0 6px 6px;padding:16px 32px;">
+          <td style="background:#060d1a;border:1px solid ${meta.borderColor};border-top:none;border-radius:0 0 6px 6px;padding:14px 32px;">
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td>

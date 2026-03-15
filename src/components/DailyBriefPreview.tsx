@@ -459,6 +459,13 @@ export default function DailyBriefPreview() {
             </div>
           )}
 
+          {/* Disclaimer */}
+          <div className="px-5 py-3 border-b border-slate-800/40 bg-slate-950/40">
+            <p className="text-[10px] text-slate-600 leading-relaxed">
+              <span className="font-semibold text-slate-500">For information only.</span> This brief is AI-generated market intelligence intended to support your own procurement judgement — not financial, legal, or trading advice. Signals, prices, and cost estimates may contain errors or omissions. Always verify with your own sources and advisors before acting. DawnSignal accepts no liability for decisions made in reliance on this content.
+            </p>
+          </div>
+
           {/* Token breakdown */}
           {(brief.prompt_tokens || brief.completion_tokens) ? (
             <div className="px-5 py-3 flex items-center gap-4 flex-wrap bg-slate-900/20">
