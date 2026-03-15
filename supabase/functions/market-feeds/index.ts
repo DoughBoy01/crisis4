@@ -86,7 +86,7 @@ async function fetchWithTimeout(url: string, timeoutMs = 10000): Promise<Respons
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { "User-Agent": "ClearBid/1.0 MarketIntelligence" },
+      headers: { "User-Agent": "DawnSignal/1.0 MarketIntelligence" },
     });
     return res;
   } finally {

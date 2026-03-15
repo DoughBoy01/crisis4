@@ -88,7 +88,7 @@ export default function Header({
                 <TrendingUp size={14} className="text-primary" />
               </div>
               <div>
-                <span className="text-sm font-bold text-foreground tracking-tight">ClearBid</span>
+                <span className="text-sm font-bold text-foreground tracking-tight">DawnSignal</span>
                 <span className="hidden sm:inline text-xs text-muted-foreground ml-2">Procurement Intelligence</span>
               </div>
             </div>

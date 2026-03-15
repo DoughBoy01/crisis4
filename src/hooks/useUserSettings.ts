@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 
-const SESSION_KEY = "clearbid_session_id";
+const SESSION_KEY = "dawnsignal_session_id";
 const DEFAULT_TZ = "Europe/London";
 
 function getOrCreateSessionId(): string {

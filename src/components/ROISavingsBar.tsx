@@ -71,7 +71,7 @@ export default function ROISavingsBar({ topAction, subscriptionCost }: ROISaving
 
         <div className="mt-3 pt-3 border-t border-emerald-500/10 space-y-1.5">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <span className="text-emerald-400/80 font-medium">How this is calculated:</span> {roi.tonnage.toLocaleString()} {roi.unit} × £{roi.priceMove} price move = £{roi.savingAmount.toLocaleString()} — captured only if you act before {roi.deadline}. One correct decision covers <span className="text-emerald-400/80 font-medium">{yearlyMultiplier} months</span> of your ClearBid subscription.
+            <span className="text-emerald-400/80 font-medium">How this is calculated:</span> {roi.tonnage.toLocaleString()} {roi.unit} × £{roi.priceMove} price move = £{roi.savingAmount.toLocaleString()} — captured only if you act before {roi.deadline}. One correct decision covers <span className="text-emerald-400/80 font-medium">{yearlyMultiplier} months</span> of your DawnSignal subscription.
           </p>
           <p className="text-[10px] text-muted-foreground/40 leading-relaxed">
             Illustrative only — based on a {roi.tonnage.toLocaleString()} {roi.unit} reference volume. Actual saving depends on your procurement volume. Verify with your supplier before acting.

@@ -735,7 +735,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
       <footer className="border-t border-border mt-8">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 py-5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground/50">ClearBid Procurement Intelligence</p>
+            <p className="text-xs text-muted-foreground/50">DawnSignal Procurement Intelligence</p>
             <p className="text-xs text-muted-foreground/30">Market data from live sources. Accuracy scores shown per source. Verify with named sources before trading.</p>
           </div>
         </div>
