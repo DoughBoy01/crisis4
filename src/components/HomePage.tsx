@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ArrowRight, Bell, Check, Loader2, Mail, Moon, Newspaper, ShieldAlert, Zap } from 'lucide-react';
+import { BackgroundPaths } from '@/components/ui/background-paths';
 
 interface HomePageProps {
   onEnter: () => void;
@@ -172,6 +173,7 @@ export default function HomePage({ onEnter }: HomePageProps) {
 
       {/* Hero */}
       <section className="relative pt-24 pb-20 px-6 overflow-hidden">
+        <BackgroundPaths />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-sky-500/4 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute top-20 left-1/3 w-72 h-72 bg-slate-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -357,8 +359,9 @@ export default function HomePage({ onEnter }: HomePageProps) {
       </section>
 
       {/* Final CTA — subscribe */}
-      <section id="subscribe-section" className="py-28 px-6 border-t border-border/20">
-        <div className="max-w-xl mx-auto text-center">
+      <section id="subscribe-section" className="relative py-28 px-6 border-t border-border/20 overflow-hidden">
+        <BackgroundPaths />
+        <div className="relative max-w-xl mx-auto text-center">
           <Moon size={28} className="text-sky-400/40 mx-auto mb-6" />
           <h2 className="text-3xl font-black text-slate-100 tracking-tight mb-4">
             The world moves overnight.
