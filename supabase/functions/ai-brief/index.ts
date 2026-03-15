@@ -284,14 +284,18 @@ const SOURCE_CATEGORY: Record<string, string> = {
 };
 
 function buildNewsSection(feeds: FeedPayload): string {
-  const byCategory: Record<string, string[]> = {};
+  const byCategory: Record<string, Array<{ headline: string; summary: string }>> = {};
   for (const src of feeds.sources) {
     if (!ALL_NEWS_SOURCES.includes(src.source_name)) continue;
     if (!src.success || !src.items?.length) continue;
     const category = SOURCE_CATEGORY[src.source_name] ?? "GENERAL";
     if (!byCategory[category]) byCategory[category] = [];
-    for (const item of src.items.slice(0, 3)) {
-      byCategory[category].push(`[${src.source_name}] ${item.title}`);
+    for (const item of src.items.slice(0, 5)) {
+      const summary = item.summary ? ` — ${item.summary.slice(0, 180)}` : "";
+      byCategory[category].push({
+        headline: `[${src.source_name}] ${item.title}`,
+        summary,
+      });
     }
   }
   const lines: string[] = ["=== NEWS & INTELLIGENCE BY CATEGORY (22:00–07:00 GMT WINDOW) ==="];
@@ -300,45 +304,95 @@ function buildNewsSection(feeds: FeedPayload): string {
     const items = byCategory[cat];
     if (items && items.length > 0) {
       lines.push(`\n--- ${cat} ---`);
-      lines.push(...items.slice(0, 6));
+      for (const item of items) {
+        lines.push(item.headline);
+        if (item.summary) lines.push(`  ${item.summary}`);
+      }
     }
   }
   if (lines.length === 1) lines.push("No news available.");
   return lines.join("\n");
 }
 
+const DATA_WARNINGS: string[] = [];
+
+function isSuspiciousPrice(symbol: string, price: number): boolean {
+  const ranges: Record<string, [number, number]> = {
+    "BZ=F": [20, 200], "CL=F": [15, 200], "NG=F": [0.5, 30],
+    "ZW=F": [200, 2000], "ZC=F": [150, 1500], "ZS=F": [500, 3000],
+    "GC=F": [500, 5000], "SI=F": [5, 200], "HG=F": [100, 800],
+    "GBPUSD=X": [0.8, 2.0], "GBPEUR=X": [0.8, 1.6], "EURUSD=X": [0.7, 1.8],
+    "DX=F": [70, 130],
+  };
+  const range = ranges[symbol];
+  if (!range) return false;
+  return price < range[0] || price > range[1];
+}
+
 function buildPriceMovesSection(feeds: FeedPayload): string {
+  DATA_WARNINGS.length = 0;
   const prices: string[] = [];
+  const warnings: string[] = [];
+
   const yahooPrices = feeds.sources.find(s => s.source_name === "Yahoo Finance" || s.source_name === "Stooq Market Data");
   if (yahooPrices?.quotes?.length) {
     for (const q of yahooPrices.quotes) {
-      if (q.price != null && q.changePercent != null) {
+      if (q.price == null) continue;
+      if (isSuspiciousPrice(q.symbol, q.price)) {
+        warnings.push(`⚠ DATA QUALITY WARNING: ${q.label} (${q.symbol}) = ${q.price} — this value appears outside the normal range and may be a data error. Do NOT use this number in your analysis. State that this data point is unavailable.`);
+        DATA_WARNINGS.push(`${q.label} price suspect (${q.price})`);
+        continue;
+      }
+      if (q.changePercent != null) {
         const dir = q.changePercent >= 0 ? "+" : "";
         const tier = magnitudeTier(Math.abs(q.changePercent));
         prices.push(`${q.label}: ${q.price.toFixed(2)} (${dir}${q.changePercent.toFixed(2)}%) [${tier}]`);
+      } else {
+        prices.push(`${q.label}: ${q.price.toFixed(2)} (no overnight change data)`);
       }
     }
   }
+
   const brentSrc = feeds.sources.find(s => s.source_name === "EIA Brent Crude");
   if (brentSrc?.success && brentSrc.current_price) {
-    const pct = brentSrc.change_pct != null ? brentSrc.change_pct : 0;
-    const dir = pct >= 0 ? "+" : "";
-    const tier = magnitudeTier(Math.abs(pct));
-    prices.push(`Brent Crude (EIA): $${brentSrc.current_price.toFixed(2)}/bbl (${dir}${pct.toFixed(2)}%) [${tier}]`);
+    const cp = brentSrc.current_price as number;
+    if (cp < 20 || cp > 200) {
+      warnings.push(`⚠ DATA QUALITY WARNING: EIA Brent Crude = $${cp}/bbl — this value is outside the plausible range ($20-$200). This is likely a data error. Do NOT use this EIA Brent figure. Use the Stooq BZ=F price if available, or state that Brent spot data is unavailable.`);
+      DATA_WARNINGS.push(`EIA Brent suspect ($${cp})`);
+    } else {
+      const pct = brentSrc.change_pct != null ? brentSrc.change_pct as number : 0;
+      const dir = pct >= 0 ? "+" : "";
+      const tier = magnitudeTier(Math.abs(pct));
+      prices.push(`Brent Crude (EIA spot): $${cp.toFixed(2)}/bbl (${dir}${pct.toFixed(2)}%) [${tier}]`);
+    }
   }
+
   const fxSrc = feeds.sources.find(s => s.source_name === "ExchangeRate.host FX");
-  const yahooPricesRef = feeds.sources.find(s => s.source_name === "Yahoo Finance" || s.source_name === "Stooq Market Data");
-  const yahooGbpUsd = yahooPricesRef?.quotes?.find(q => q.symbol === "GBPUSD=X");
-  const yahooGbpEur = yahooPricesRef?.quotes?.find(q => q.symbol === "GBPEUR=X");
+  const yahooGbpUsd = yahooPrices?.quotes?.find(q => q.symbol === "GBPUSD=X");
+  const yahooGbpEur = yahooPrices?.quotes?.find(q => q.symbol === "GBPEUR=X");
   if (fxSrc?.success) {
-    if (fxSrc.gbp_usd && !yahooGbpUsd?.changePercent) {
-      prices.push(`GBP/USD (spot): ${(fxSrc.gbp_usd as number).toFixed(4)} — no overnight change from this source`);
+    if (fxSrc.gbp_usd && !yahooGbpUsd?.price) {
+      const gbpUsd = fxSrc.gbp_usd as number;
+      if (gbpUsd > 0.8 && gbpUsd < 2.0) {
+        prices.push(`GBP/USD (daily spot): ${gbpUsd.toFixed(4)} — no overnight change data from this source`);
+      }
     }
-    if (fxSrc.gbp_eur && !yahooGbpEur?.changePercent) {
-      prices.push(`GBP/EUR (spot): ${(fxSrc.gbp_eur as number).toFixed(4)} — no overnight change from this source`);
+    if (fxSrc.gbp_eur && !yahooGbpEur?.price) {
+      const gbpEur = fxSrc.gbp_eur as number;
+      if (gbpEur > 0.8 && gbpEur < 1.6) {
+        prices.push(`GBP/EUR (daily spot): ${gbpEur.toFixed(4)} — no overnight change data from this source`);
+      }
     }
   }
-  return prices.length ? prices.join("\n") : "No price data available.";
+
+  const result: string[] = [];
+  if (warnings.length > 0) {
+    result.push("=== DATA QUALITY ALERTS — READ BEFORE USING PRICES ===");
+    result.push(...warnings);
+    result.push("");
+  }
+  result.push(...prices);
+  return result.length ? result.join("\n") : "No price data available.";
 }
 
 function buildPersonaPrompt(
