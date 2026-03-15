@@ -24,6 +24,7 @@ import DevControlsPanel from './DevControlsPanel';
 import AgentRunHistory from './AgentRunHistory';
 import DailyBriefPreview from './DailyBriefPreview';
 import ScoutIntelPanel from './ScoutIntelPanel';
+import BriefAccuracyPanel from './BriefAccuracyPanel';
 import { useScoutIntel } from '@/hooks/useScoutIntel';
 
 interface ServiceResult {
@@ -488,8 +489,19 @@ export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps
         </div>
 
         {/* Daily brief preview */}
-        <div className="mt-8 pb-8">
+        <div className="mt-8">
           <DailyBriefPreview />
+        </div>
+
+        {/* Brief Accuracy Analysis */}
+        <div className="mt-8 pb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity size={13} className="text-sky-400" />
+            <h2 className="text-xs font-bold text-slate-400 tracking-widest uppercase">Brief Accuracy Analysis</h2>
+            <div className="flex-1 h-px bg-slate-800" />
+            <span className="text-[10px] text-slate-600">15 Mar 2026 · 08:45 UTC brief</span>
+          </div>
+          <BriefAccuracyPanel />
         </div>
 
       </div>
