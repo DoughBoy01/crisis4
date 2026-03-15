@@ -135,7 +135,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
   const [activeSector, setActiveSector] = useState<SectorId | null>(null);
   const [conflictOpen, setConflictOpen] = useState(true);
   const [newsOpen, setNewsOpen] = useState(false);
-  const [marketsOpen, setMarketsOpen] = useState(false);
+  const [marketsOpen, setMarketsOpen] = useState(true);
   const { settings, updateTimezone } = useUserSettings();
   const timezone = settings.timezone;
 
@@ -149,7 +149,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
     refresh: refreshFeeds,
   } = useMarketFeeds();
 
-  const { context: historicalContext } = useHistoricalContext();
+  const { context: historicalContext, loading: historicalLoading } = useHistoricalContext();
 
   const marketItems = useMemo(() => deriveMarketItems(feeds, historicalContext), [feeds, historicalContext]);
   const overnightStats = useMemo(() => deriveOvernightStats(feeds), [feeds]);
@@ -490,18 +490,33 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
             open={marketsOpen}
             onToggle={() => setMarketsOpen(o => !o)}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {categories.map(cat => (
-                <MarketSection
-                  key={cat.id}
-                  category={cat.id}
-                  label={cat.label}
-                  description={cat.description}
-                  items={marketItems.filter(i => i.category === cat.id)}
-                  activeSector={activeSector}
-                />
-              ))}
-            </div>
+            {(feedsLoading || historicalLoading) && marketItems.length === 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                {categories.map(cat => (
+                  <div key={cat.id} className="space-y-3">
+                    <div className="h-3 bg-slate-700/50 rounded w-1/2 animate-pulse" />
+                    <div className="rounded-xl border border-border/30 bg-slate-800/20 px-4 py-8 animate-pulse">
+                      <div className="h-3 bg-slate-700/50 rounded w-2/3 mb-3" />
+                      <div className="h-6 bg-slate-700/40 rounded w-1/2 mb-2" />
+                      <div className="h-2 bg-slate-700/30 rounded w-full mt-4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                {categories.map(cat => (
+                  <MarketSection
+                    key={cat.id}
+                    category={cat.id}
+                    label={cat.label}
+                    description={cat.description}
+                    items={marketItems.filter(i => i.category === cat.id)}
+                    activeSector={activeSector}
+                  />
+                ))}
+              </div>
+            )}
           </CollapsibleSection>
         </div>
 
