@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { marketOpenTime } from '../data/marketData';
 import { deriveMarketItems, deriveOvernightStats, deriveActionItems, deriveMorningAlerts, deriveConflictZones, deriveSupplyExposure, deriveContingencyPlaybooks, deriveTopMover } from '@/lib/feedDerived';
 import type { MarketCategory, SectorId } from '../types';
@@ -25,6 +25,7 @@ import { useMarketFeeds, getBrentFromFeeds, getFxFromFeeds } from '@/hooks/useMa
 import { useDailyBrief } from '@/hooks/useDailyBrief';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { useHistoricalContext } from '@/hooks/useHistoricalContext';
+import { useDeleteStory } from '@/hooks/useDeleteStory';
 import { ChevronDown, ChevronUp, Shield, BarChart2, Newspaper, Filter, Ship, Clock, TrendingUp, Radar } from 'lucide-react';
 import CommodityMiniChart from './CommodityMiniChart';
 import ScoutIntelPanel from './ScoutIntelPanel';
@@ -181,6 +182,14 @@ export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSign
   const { context: historicalContext, loading: historicalLoading } = useHistoricalContext();
   const { run: scoutRun, loading: scoutLoading } = useScoutIntel();
   const { dismissed, dismissStory, undismiss, isDismissed } = useDismissedIntel();
+  const { deleteStory } = useDeleteStory();
+
+  const handleAdminDeleteStory = useCallback(async (titleOrRefId: string, explicitTitle?: string) => {
+    const title = explicitTitle ?? titleOrRefId;
+    await deleteStory(title);
+    await dismissStory(title, title);
+    refreshFeeds();
+  }, [deleteStory, dismissStory, refreshFeeds]);
 
   const marketItems = useMemo(() => deriveMarketItems(feeds, historicalContext), [feeds, historicalContext]);
   const overnightStats = useMemo(() => deriveOvernightStats(feeds), [feeds]);
@@ -364,7 +373,7 @@ export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSign
               timezone={timezone}
               variant="critical-strip"
               isAdmin={isAdmin}
-              onDismissAlert={isAdmin ? (title) => dismissStory(title, title) : undefined}
+              onDismissAlert={isAdmin ? handleAdminDeleteStory : undefined}
               isDismissed={isDismissed}
             />
           </div>
@@ -463,7 +472,7 @@ export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSign
                       alerts={filteredAlerts}
                       timezone={timezone}
                       isAdmin={isAdmin}
-                      onDismissAlert={isAdmin ? (title) => dismissStory(title, title) : undefined}
+                      onDismissAlert={isAdmin ? handleAdminDeleteStory : undefined}
                       isDismissed={isDismissed}
                     />
                   ) : (
@@ -768,7 +777,7 @@ export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSign
               isAdmin={isAdmin}
               dismissedStoryIds={dismissed.filter(d => d.type === 'news_story').map(d => d.ref_id)}
               dismissedStories={dismissed.filter(d => d.type === 'news_story')}
-              onDismissStory={isAdmin ? dismissStory : undefined}
+              onDismissStory={isAdmin ? handleAdminDeleteStory : undefined}
               onUndismissStory={isAdmin ? undismiss : undefined}
               isDismissed={isDismissed}
             />
