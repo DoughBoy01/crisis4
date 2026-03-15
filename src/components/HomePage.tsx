@@ -1,47 +1,22 @@
-import { ArrowRight, BarChart2, Bell, CheckSquare, Clock, Globe, Shield, TrendingUp, Zap } from 'lucide-react';
+import { ArrowRight, Bell, Mail, Moon, Newspaper, ShieldAlert, Zap } from 'lucide-react';
 
 interface HomePageProps {
   onEnter: () => void;
 }
 
-const features = [
-  {
-    icon: Bell,
-    title: 'Overnight alerts at a glance',
-    body: 'Know what moved while you slept. Critical price events, geopolitical flashpoints, and shipping disruptions surfaced the moment you open the app.',
-  },
-  {
-    icon: BarChart2,
-    title: 'Live market price reference',
-    body: 'Energy, FX, freight, fertilisers, agricultural — all tracked instruments in one view with intraday charts and 10-year historical context.',
-  },
-  {
-    icon: CheckSquare,
-    title: 'Morning action list',
-    body: 'A ranked, signal-driven to-do list telling you exactly what to act on before 9am. Checkboxes persist across sessions.',
-  },
-  {
-    icon: Globe,
-    title: 'Conflict & supply chain intel',
-    body: 'Live conflict zone tracking with commodity impact scores, shipping lane RAG status, and contingency playbooks for your sector.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Relevance-ranked news',
-    body: 'Hundreds of RSS headlines deduplicated and scored for procurement relevance. Only what matters surfaces to the top.',
-  },
-  {
-    icon: Shield,
-    title: 'Sector-specific filtering',
-    body: 'Tell us your sector — food imports, chemicals, freight, construction, or finance — and the whole dashboard filters to what affects you.',
-  },
+const timeline = [
+  { time: '11pm', label: 'Markets close in Asia', detail: 'We start watching.' },
+  { time: '2am', label: 'European news breaks', detail: 'Conflict updates, price moves, shipping alerts captured.' },
+  { time: '4am', label: 'US overnight session', detail: 'Energy, ag futures, and FX scored for impact.' },
+  { time: '6am', label: 'Brief compiled', detail: 'AI distils overnight events into a ranked intelligence report.' },
+  { time: '7am', label: 'In your inbox', detail: 'You read it with your coffee. You know what to act on.' },
 ];
 
-const stats = [
-  { value: '19', label: 'live intel sources' },
-  { value: '<60s', label: 'data refresh cycle' },
-  { value: '6', label: 'commodity categories' },
-  { value: '10yr', label: 'historical context' },
+const signals = [
+  { icon: ShieldAlert, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', label: 'Conflict alerts', body: 'Active war zones, escalations, and sanctions that affect your supply routes.' },
+  { icon: Newspaper, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', label: 'Market moves', body: 'Overnight price swings in energy, grain, metals, fertilisers, and freight.' },
+  { icon: Bell, color: 'text-sky-400', bg: 'bg-sky-500/10 border-sky-500/20', label: 'Shipping disruptions', body: 'Lane closures, war risk premiums, port delays — ranked by severity.' },
+  { icon: Mail, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', label: 'Morning brief', body: 'One email. What happened, why it matters, and what to do about it.' },
 ];
 
 export default function HomePage({ onEnter }: HomePageProps) {
@@ -68,147 +43,163 @@ export default function HomePage({ onEnter }: HomePageProps) {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-24 pb-20 px-6 overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-32 left-1/4 w-64 h-64 bg-emerald-500/4 rounded-full blur-3xl pointer-events-none" />
+      <section className="relative pt-28 pb-24 px-6 overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-sky-500/4 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-20 left-1/3 w-72 h-72 bg-slate-500/5 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-full px-3.5 py-1.5 mb-8 tracking-wider uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-            Procurement intelligence · live feeds
+        <div className="relative max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-sky-400/80 bg-sky-500/8 border border-sky-500/15 rounded-full px-3.5 py-1.5 mb-10 tracking-widest uppercase">
+            <Moon size={11} className="opacity-70" />
+            Overnight intelligence · supply chain & procurement
           </div>
 
-          <h1 className="text-5xl sm:text-6xl font-black text-slate-100 leading-[1.08] tracking-tight mb-6">
-            Know what moved
+          <h1 className="text-5xl sm:text-[64px] font-black text-slate-100 leading-[1.05] tracking-tight mb-7">
+            We monitor the crisis
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-emerald-400">
-              before the market opens
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-sky-300 to-emerald-400">
+              whilst you sleep
             </span>
           </h1>
 
-          <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-10">
-            DawnSignal aggregates 19 live intelligence sources — commodity prices, conflict zones, shipping
-            disruptions, and news feeds — into a single morning briefing for procurement and supply chain teams.
+          <p className="text-xl text-slate-400 leading-relaxed max-w-xl mx-auto mb-12 font-light">
+            Every morning, an intelligence briefing lands in your inbox — conflict zones, commodity price moves,
+            and shipping disruptions that hit overnight, ranked by impact on your supply chain.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={onEnter}
-              className="inline-flex items-center gap-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm px-7 py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-sky-500/25 hover:shadow-sky-400/30 hover:scale-[1.02] active:scale-[0.99]"
+              className="inline-flex items-center gap-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-sky-500/20 hover:shadow-sky-400/25 hover:scale-[1.02] active:scale-[0.99]"
             >
-              Open the dashboard
+              See this morning's briefing
               <ArrowRight size={15} />
             </button>
-            <span className="text-xs text-muted-foreground/50">No sign-up required</span>
+            <span className="text-xs text-muted-foreground/40">No sign-up required</span>
           </div>
         </div>
       </section>
 
-      {/* Stats bar */}
-      <section className="border-y border-border/30 bg-slate-800/20 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-6 py-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
-          {stats.map(s => (
-            <div key={s.value} className="text-center">
-              <p className="text-3xl font-black text-slate-100 tracking-tight">{s.value}</p>
-              <p className="text-xs text-muted-foreground/60 mt-1 font-medium">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Feature grid */}
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-black text-slate-100 tracking-tight mb-3">
-              Everything you need by 8am
-            </h2>
-            <p className="text-muted-foreground max-w-lg mx-auto">
-              Built for procurement managers who need to make buying decisions before commodity prices move against them.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map(f => (
-              <div
-                key={f.title}
-                className="rounded-2xl border border-border/40 bg-slate-800/30 p-6 hover:border-slate-600/60 hover:bg-slate-800/50 transition-all duration-200 group"
-              >
-                <div className="w-9 h-9 rounded-xl bg-slate-700/60 border border-slate-600/40 flex items-center justify-center mb-4 group-hover:border-sky-500/30 group-hover:bg-sky-500/10 transition-all duration-200">
-                  <f.icon size={16} className="text-muted-foreground group-hover:text-sky-400 transition-colors duration-200" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-200 mb-2 leading-snug">{f.title}</h3>
-                <p className="text-xs text-muted-foreground/70 leading-relaxed">{f.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
+      {/* Overnight timeline */}
       <section className="py-20 px-6 border-t border-border/20 bg-slate-800/10">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl font-black text-slate-100 tracking-tight mb-12">How it works</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            {[
-              { step: '01', icon: Globe, title: 'Aggregates live data', body: 'Pulls from 19 sources every 60 seconds — Reuters, Financial Times, AHDB, USDA, BBC, Rigzone, and more.' },
-              { step: '02', icon: Zap, title: 'Derives signals', body: 'AI scores each item for urgency, attaches historical context, and generates an actionable morning brief.' },
-              { step: '03', icon: Clock, title: 'Filters for your sector', body: 'Pick your sector and every panel — alerts, actions, conflict zones, charts — filters to what is relevant for you.' },
-            ].map(s => (
-              <div key={s.step} className="flex flex-col items-center text-center">
-                <div className="relative mb-5">
-                  <div className="w-12 h-12 rounded-2xl border border-border/40 bg-slate-800/50 flex items-center justify-center">
-                    <s.icon size={18} className="text-sky-400/70" />
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-2xl font-black text-slate-100 tracking-tight mb-3">While you were asleep</h2>
+            <p className="text-sm text-slate-400/70 max-w-sm mx-auto">The world doesn't stop moving at 5pm. Here's what we watch through the night.</p>
+          </div>
+
+          <div className="relative">
+            <div className="absolute left-[72px] top-4 bottom-4 w-px bg-gradient-to-b from-sky-500/30 via-sky-500/15 to-transparent hidden sm:block" />
+            <div className="space-y-6">
+              {timeline.map((t, i) => (
+                <div key={i} className="flex items-start gap-5 sm:gap-7">
+                  <div className="flex-shrink-0 text-right w-14 sm:w-16">
+                    <span className="text-xs font-bold text-sky-400/70 font-mono">{t.time}</span>
                   </div>
-                  <span className="absolute -top-2 -right-2 text-[9px] font-black text-sky-400/50 font-mono">{s.step}</span>
+                  <div className="flex-shrink-0 relative z-10 mt-0.5 hidden sm:flex">
+                    <div className="w-2.5 h-2.5 rounded-full bg-sky-500/50 border border-sky-400/40 ring-4 ring-background" />
+                  </div>
+                  <div className="flex-1 pb-1">
+                    <p className="text-sm font-bold text-slate-200">{t.label}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{t.detail}</p>
+                  </div>
                 </div>
-                <h3 className="text-sm font-bold text-slate-200 mb-2">{s.title}</h3>
-                <p className="text-xs text-muted-foreground/60 leading-relaxed">{s.body}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* What's in the brief */}
+      <section className="py-20 px-6 border-t border-border/20">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-2xl font-black text-slate-100 tracking-tight mb-3">What's in the briefing</h2>
+            <p className="text-sm text-slate-400/70 max-w-md mx-auto">Four categories of intelligence, distilled from 19 live data sources into one readable report.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {signals.map(s => (
+              <div key={s.label} className={`rounded-2xl border p-6 ${s.bg} transition-all duration-200 hover:scale-[1.01]`}>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <s.icon size={18} className={s.color} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-200 mb-1.5">{s.label}</p>
+                    <p className="text-xs text-slate-400/80 leading-relaxed">{s.body}</p>
+                  </div>
+                </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* The brief mockup / quote */}
+      <section className="py-20 px-6 border-t border-border/20 bg-slate-800/10">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-amber-400/70 bg-amber-500/8 border border-amber-500/15 rounded-full px-3 py-1.5 mb-8 tracking-widest uppercase">
+            <Mail size={10} />
+            Example morning brief
+          </div>
+          <div className="rounded-2xl border border-border/40 bg-slate-800/40 text-left p-7 shadow-2xl shadow-black/30">
+            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-border/30">
+              <div className="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center flex-shrink-0">
+                <Zap size={13} className="text-sky-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-200">DawnSignal Morning Brief</p>
+                <p className="text-[10px] text-slate-500">Tuesday, 7:02 AM · 4 signals</p>
+              </div>
+            </div>
+            <div className="space-y-3.5">
+              {[
+                { tag: 'HIGH', color: 'text-red-400 bg-red-500/10 border-red-500/20', text: 'Russia-Ukraine: fresh drone strikes on Odessa port. Black Sea wheat corridor risk elevated. Wheat futures +2.3% overnight.' },
+                { tag: 'MED', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20', text: 'Brent crude +$1.40 on Hormuz tension reports. No formal disruption confirmed. Monitor.' },
+                { tag: 'MED', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20', text: 'Red Sea: Houthi attack on container vessel. Maersk rerouting via Cape of Good Hope. +12 day transit.' },
+                { tag: 'INFO', color: 'text-sky-400 bg-sky-500/10 border-sky-500/20', text: 'EU carbon price steady. Natural gas TTF -1.1%. No immediate action required for European buyers.' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border tracking-wider flex-shrink-0 mt-0.5 ${item.color}`}>{item.tag}</span>
+                  <p className="text-xs text-slate-400 leading-relaxed">{item.text}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Who it's for */}
       <section className="py-20 px-6 border-t border-border/20">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-black text-slate-100 tracking-tight mb-3">Built for your team</h2>
-            <p className="text-sm text-muted-foreground/60">Choose a persona when you open the dashboard and the view adapts to your role.</p>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {[
-              { label: 'Food Importer', desc: 'Grain, FX, fertilisers' },
-              { label: 'Chemical Buyer', desc: 'Gas, oil, feedstocks' },
-              { label: 'Freight & 3PL', desc: 'Lanes, containers, war risk' },
-              { label: 'Construction', desc: 'Steel, fuel, aluminium' },
-              { label: 'Financial Analyst', desc: 'All commodities, macro' },
-            ].map(p => (
-              <div key={p.label} className="rounded-xl border border-border/30 bg-slate-800/20 px-4 py-4 text-center hover:border-sky-500/20 hover:bg-sky-500/5 transition-all duration-200">
-                <p className="text-xs font-bold text-slate-300 mb-1">{p.label}</p>
-                <p className="text-[10px] text-muted-foreground/50">{p.desc}</p>
-              </div>
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl font-black text-slate-100 tracking-tight mb-3">Built for people who can't afford surprises</h2>
+          <p className="text-sm text-slate-400/70 mb-10 max-w-md mx-auto">If an overnight event can change your buying decision, you need this in your inbox before 8am.</p>
+          <div className="flex flex-wrap justify-center gap-2.5">
+            {['Procurement managers', 'Supply chain directors', 'Food importers', 'Freight & logistics', 'Chemical buyers', 'Finance teams'].map(r => (
+              <span key={r} className="text-xs font-medium text-slate-300 bg-slate-700/40 border border-slate-600/30 rounded-full px-3.5 py-1.5 hover:border-slate-500/50 transition-colors">
+                {r}
+              </span>
             ))}
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-6 border-t border-border/20">
-        <div className="max-w-2xl mx-auto text-center">
+      <section className="py-24 px-6 border-t border-border/20 bg-slate-800/10">
+        <div className="max-w-xl mx-auto text-center">
+          <Moon size={28} className="text-sky-400/40 mx-auto mb-6" />
           <h2 className="text-3xl font-black text-slate-100 tracking-tight mb-4">
-            Ready to see this morning's signals?
+            The world moves overnight.
+            <br />
+            <span className="text-slate-400 font-light">Be ready when it does.</span>
           </h2>
-          <p className="text-muted-foreground mb-10">
-            The dashboard is live and pulling data right now. No sign-up, no setup.
+          <p className="text-slate-500 text-sm mb-10">
+            The dashboard is live and pulling data right now.
           </p>
           <button
             onClick={onEnter}
-            className="inline-flex items-center gap-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-sky-500/25 hover:shadow-sky-400/30 hover:scale-[1.02] active:scale-[0.99]"
+            className="inline-flex items-center gap-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-sky-500/20 hover:shadow-sky-400/25 hover:scale-[1.02] active:scale-[0.99]"
           >
-            Open the dashboard
+            See this morning's briefing
             <ArrowRight size={15} />
           </button>
         </div>
@@ -224,7 +215,7 @@ export default function HomePage({ onEnter }: HomePageProps) {
             <span className="text-xs font-bold text-slate-400">DawnSignal</span>
           </div>
           <p className="text-[11px] text-muted-foreground/30 text-center">
-            Market data from live sources. Verify with named sources before trading.
+            Market data from live sources. Verify with named sources before acting.
           </p>
         </div>
       </footer>
