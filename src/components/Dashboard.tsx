@@ -29,6 +29,7 @@ import { ChevronDown, ChevronUp, Shield, BarChart2, Newspaper, Filter, Ship, Clo
 import CommodityMiniChart from './CommodityMiniChart';
 import ScoutIntelPanel from './ScoutIntelPanel';
 import { useScoutIntel } from '@/hooks/useScoutIntel';
+import { useDismissedIntel } from '@/hooks/useDismissedIntel';
 
 const NEWS_SOURCES_LIST = [
   "BBC Business RSS",
@@ -172,6 +173,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
 
   const { context: historicalContext, loading: historicalLoading } = useHistoricalContext();
   const { run: scoutRun, loading: scoutLoading } = useScoutIntel();
+  const { dismissed } = useDismissedIntel();
 
   const marketItems = useMemo(() => deriveMarketItems(feeds, historicalContext), [feeds, historicalContext]);
   const overnightStats = useMemo(() => deriveOvernightStats(feeds), [feeds]);
@@ -491,7 +493,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
                 <span className="ml-auto text-[10px] text-muted-foreground/40">overnight · AI-gathered</span>
               </div>
               <div className="p-4">
-                <ScoutIntelPanel run={scoutRun} loading={scoutLoading} />
+                <ScoutIntelPanel run={scoutRun} loading={scoutLoading} dismissed={dismissed} />
               </div>
             </div>
 

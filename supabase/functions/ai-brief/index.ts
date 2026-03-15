@@ -810,7 +810,22 @@ async function generateBriefForPersona(
     return { brief: existing as DailyBrief, cached: true };
   }
 
-  const prompt = buildPersonaPrompt(persona, feeds, percentiles, seasonal, conflictBaselines, scout);
+  let filteredScout = scout;
+  if (scout?.intelligence?.length) {
+    const { data: dismissedRows } = await db
+      .from("dismissed_intel")
+      .select("ref_id")
+      .eq("type", "scout_topic");
+    const dismissedIds = new Set((dismissedRows ?? []).map((r: { ref_id: string }) => r.ref_id));
+    if (dismissedIds.size > 0) {
+      filteredScout = {
+        ...scout,
+        intelligence: scout.intelligence.filter(t => !dismissedIds.has(t.topic_id)),
+      };
+    }
+  }
+
+  const prompt = buildPersonaPrompt(persona, feeds, percentiles, seasonal, conflictBaselines, filteredScout);
 
   const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
