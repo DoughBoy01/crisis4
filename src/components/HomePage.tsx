@@ -5,10 +5,11 @@ interface HomePageProps {
 }
 
 const timeline = [
-  { time: '1am', label: 'Tokyo & Shanghai open', detail: 'Asian session begins. We start watching futures, FX, and commodity moves.' },
-  { time: '3am', label: 'Hong Kong joins', detail: 'Conflict updates, shipping alerts, and price moves captured across Asia.' },
-  { time: '5am', label: 'Singapore & Europe stir', detail: 'Energy, ag futures, and FX scored for impact before London opens.' },
-  { time: '6am', label: 'Brief compiled', detail: 'AI distils overnight events into a ranked intelligence report.' },
+  { time: '9pm', label: 'Sydney opens', detail: 'Pacific session live. AUD, NZD, and early Gold moves captured.' },
+  { time: '12am', label: 'Tokyo opens', detail: 'JPY pairs, Gold session, and Asian equity futures begin moving. Shipping and conflict alerts monitored.' },
+  { time: '1am', label: 'Shanghai & mainland China', detail: 'Commodity futures, CNY FX, and geopolitical signals tracked across APAC.' },
+  { time: '3am', label: 'Hong Kong & Singapore', detail: 'Regional equity closes, freight indices, and late-breaking news scored for impact.' },
+  { time: '6am', label: 'Brief compiled', detail: 'AI distils the full overnight session into a ranked intelligence report.' },
   { time: '7am', label: 'In your inbox', detail: 'You read it with your coffee. You know what to act on.' },
 ];
 
