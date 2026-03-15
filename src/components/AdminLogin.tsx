@@ -10,7 +10,6 @@ interface AdminLoginProps {
 }
 
 export default function AdminLogin({ onAuthenticated, onBack }: AdminLoginProps) {
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,10 +20,13 @@ export default function AdminLogin({ onAuthenticated, onBack }: AdminLoginProps)
     setLoading(true);
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: ADMIN_EMAIL,
+        password,
+      });
 
       if (authError) {
-        setError('Invalid email or password.');
+        setError(authError.message);
         return;
       }
 
@@ -52,17 +54,9 @@ export default function AdminLogin({ onAuthenticated, onBack }: AdminLoginProps)
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              autoFocus
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 transition-colors"
-              placeholder="admin@example.com"
-            />
+          <div className="bg-slate-900 border border-slate-800 rounded-lg px-3.5 py-2.5">
+            <p className="text-xs text-slate-500">Signing in as</p>
+            <p className="text-sm text-slate-300 font-medium">{ADMIN_EMAIL}</p>
           </div>
 
           <div>
@@ -72,6 +66,7 @@ export default function AdminLogin({ onAuthenticated, onBack }: AdminLoginProps)
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
+              autoFocus
               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 transition-colors"
               placeholder="••••••••"
             />
