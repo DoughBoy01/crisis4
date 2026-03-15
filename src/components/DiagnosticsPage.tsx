@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DevControlsPanel from './DevControlsPanel';
+import ChangePasswordPanel from './ChangePasswordPanel';
 import AgentRunHistory from './AgentRunHistory';
 import DailyBriefPreview from './DailyBriefPreview';
 import ScoutIntelPanel from './ScoutIntelPanel';
@@ -428,6 +429,11 @@ export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps
         {/* Dev Controls */}
         <div className="mb-6">
           <DevControlsPanel />
+        </div>
+
+        {/* Change Password */}
+        <div className="mb-6">
+          <ChangePasswordPanel />
         </div>
 
         {/* Summary bar */}
