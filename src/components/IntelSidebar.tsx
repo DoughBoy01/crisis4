@@ -305,22 +305,24 @@ export default function IntelSidebar({
         </CardContent>
       </Card>
 
-      {/* ── Col 3: The 8-Hour Advantage ── */}
+      {/* ── Col 3: System Coverage ── */}
       <Card className="bg-card overflow-hidden">
         <CardContent className="px-3 py-3">
-          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5">The 8-Hour Advantage</p>
-          <div className="space-y-2">
+          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5">What's Being Monitored</p>
+
+          <div className="space-y-1.5">
             {[
-              { time: "22:00", label: "Monitoring begins", desc: "Asia markets open. Overnight pipeline starts." },
-              { time: "02–05:00", label: "Events detected", desc: "Geopolitical signals, price moves, carrier alerts captured." },
-              { time: "Pre-mkt", label: "Brief generated", desc: "Signals translated into cited UK procurement actions." },
-              { time: "Open", label: "Your analyst starts", desc: "The market has been moving for hours already." },
-            ].map(step => (
-              <div key={step.time} className="flex gap-2">
-                <div className="text-[9px] font-mono text-muted-foreground/50 w-12 shrink-0 pt-0.5 leading-tight">{step.time}</div>
-                <div>
-                  <p className="text-[10px] font-semibold text-slate-300 leading-tight">{step.label}</p>
-                  <p className="text-[9px] text-muted-foreground/60 leading-tight">{step.desc}</p>
+              { label: "Commodity prices", value: feeds ? `${feeds.sources.filter(s => s.source_name.includes('EIA') || s.source_name.includes('Yahoo') || s.source_name.includes('Stooq')).length > 0 ? "Stooq · EIA · FX" : "Stooq · FX"}` : "Loading…", ok: !!feeds },
+              { label: "Geopolitical / news RSS", value: feeds ? `${feeds.sources.filter(s => !s.source_name.includes('EIA') && !s.source_name.includes('FX') && !s.source_name.includes('Yahoo')).length} sources` : "Loading…", ok: feeds ? feeds.sources.filter(s => !s.source_name.includes('EIA') && !s.source_name.includes('FX') && !s.source_name.includes('Yahoo')).some(s => s.success) : false },
+              { label: "Conflict zone configs", value: "6 theatres (Middle East, Red Sea, Ukraine, India-Pak, Taiwan, Arctic)", ok: true },
+              { label: "Supply chain markets", value: "Energy · Grain · Fertilizer · Metals · FX · Freight", ok: true },
+              { label: "Contingency playbooks", value: "5 scenario templates (price spike, supply disruption, geopolitical, FX, freight)", ok: true },
+            ].map(item => (
+              <div key={item.label} className="flex items-start gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 mt-[3px] ${item.ok ? 'bg-emerald-400/70' : 'bg-slate-600'}`} />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-semibold text-slate-400 leading-tight">{item.label}</p>
+                  <p className="text-[9px] text-muted-foreground/50 leading-tight">{item.value}</p>
                 </div>
               </div>
             ))}
@@ -328,9 +330,17 @@ export default function IntelSidebar({
 
           <Separator className="my-2.5 bg-border" />
 
-          <p className="text-[9px] text-muted-foreground/70 leading-relaxed">
-            <span className="text-sky-400 font-semibold">ClearBid</span> bridges the gap between generic news and £20k/yr Bloomberg terminals — purpose-built for UK SME procurement teams who need cited confidence at 7am.
-          </p>
+          <div className="space-y-1">
+            <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider">Monitoring window</p>
+            <p className="text-[9px] text-muted-foreground/60 leading-relaxed">
+              22:00–07:00 GMT overnight · Asia open through pre-UK-market · auto-refreshes every 15 min
+            </p>
+            {feeds && (
+              <p className="text-[9px] text-muted-foreground/40 mt-1">
+                {feeds.sources_ok}/{feeds.sources_total} sources live · next refresh in {formatCountdown(Math.floor(nextRefreshIn))}
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
 

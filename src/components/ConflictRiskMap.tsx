@@ -171,7 +171,7 @@ export default function ConflictRiskMap({ zones, loading }: ConflictRiskMapProps
           <div className="rounded-lg border border-slate-700/40 bg-slate-800/20 px-4 py-6 text-center">
             <Shield size={20} className="text-emerald-500/30 mx-auto mb-2" />
             <p className="text-xs text-muted-foreground/50">No active conflict signals detected</p>
-            <p className="text-[10px] text-muted-foreground/30 mt-1">Monitoring 17 sources across 6 zone configurations</p>
+            <p className="text-[10px] text-muted-foreground/30 mt-1">Monitoring live feeds across 6 zone configurations · No signals detected in current window</p>
           </div>
         ) : (
           <div className="space-y-2">

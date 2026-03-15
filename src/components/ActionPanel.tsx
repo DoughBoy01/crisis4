@@ -10,11 +10,12 @@ interface ActionPanelProps {
   actions: ActionItem[];
   activeSector: SectorId | null;
   aiRationale?: Record<string, string>;
+  loading?: boolean;
 }
 
 const signalOrder: Record<string, number> = { URGENT: 0, BUY: 1, WATCH: 2, HOLD: 3 };
 
-export default function ActionPanel({ actions, activeSector, aiRationale }: ActionPanelProps) {
+export default function ActionPanel({ actions, activeSector, aiRationale, loading }: ActionPanelProps) {
   const [checked, setChecked] = useState<string[]>([]);
   const [expanded, setExpanded] = useState<string[]>([]);
 
@@ -54,8 +55,23 @@ export default function ActionPanel({ actions, activeSector, aiRationale }: Acti
 
       <CardContent className="px-0 pb-0">
         {filtered.length === 0 ? (
-          <div className="px-5 py-8 text-center">
-            <p className="text-sm text-muted-foreground">No actions for your selected sector today.</p>
+          <div className="px-5 py-8 text-center space-y-1">
+            {loading ? (
+              <>
+                <p className="text-sm text-muted-foreground">Deriving actions from live feeds…</p>
+                <p className="text-[11px] text-muted-foreground/40">Actions appear once market data has loaded</p>
+              </>
+            ) : activeSector ? (
+              <>
+                <p className="text-sm text-muted-foreground">No signals for your selected sector today.</p>
+                <p className="text-[11px] text-muted-foreground/40">Try clearing the sector filter to see all signals, or check back after the next data refresh</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">No actionable signals detected overnight.</p>
+                <p className="text-[11px] text-muted-foreground/40">Markets within normal variance — no price moves above action thresholds detected in current feeds</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-border/30">
@@ -150,19 +166,24 @@ export default function ActionPanel({ actions, activeSector, aiRationale }: Acti
                       })()}
 
                       {action.roi && (
-                        <div className="flex items-center gap-3 bg-emerald-950/30 border border-emerald-500/20 rounded px-3 py-2">
-                          <PoundSterling size={13} className="text-emerald-400 shrink-0" />
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-base font-bold text-emerald-400 font-mono">
-                              £{action.roi.savingAmount.toLocaleString('en-GB')}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {action.roi.tonnage.toLocaleString()} {action.roi.unit} @ £{action.roi.priceMove}{action.roi.unit === 'litres' ? '/L' : '/t'} move
-                            </span>
-                            <span className="text-[10px] text-emerald-500/60 ml-auto">
-                              {action.roi.multiplier}× sub ROI
-                            </span>
+                        <div className="bg-emerald-950/30 border border-emerald-500/20 rounded px-3 py-2 space-y-1">
+                          <div className="flex items-center gap-3">
+                            <PoundSterling size={13} className="text-emerald-400 shrink-0" />
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <span className="text-base font-bold text-emerald-400 font-mono">
+                                £{action.roi.savingAmount.toLocaleString('en-GB')}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                {action.roi.tonnage.toLocaleString()} {action.roi.unit} @ £{action.roi.priceMove}{action.roi.unit === 'litres' ? '/L' : '/t'} move
+                              </span>
+                              <span className="text-[10px] text-emerald-500/60 ml-auto">
+                                {action.roi.multiplier}× sub ROI
+                              </span>
+                            </div>
                           </div>
+                          <p className="text-[9px] text-muted-foreground/40 pl-[21px]">
+                            Illustrative — based on {action.roi.tonnage.toLocaleString()} {action.roi.unit} reference volume. Actual saving depends on your procurement volume.
+                          </p>
                         </div>
                       )}
 

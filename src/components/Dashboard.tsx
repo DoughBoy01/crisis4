@@ -475,7 +475,7 @@ export default function Dashboard({ onOpenDiagnostics }: { onOpenDiagnostics?: (
                     <div className="h-3 bg-slate-700/30 rounded w-1/4 mx-auto" />
                   </div>
                 ) : (
-                  <ActionPanel actions={actionItems} activeSector={activeSector} aiRationale={dailyBrief?.action_rationale} />
+                  <ActionPanel actions={actionItems} activeSector={activeSector} aiRationale={dailyBrief?.action_rationale} loading={feedsLoading} />
                 )}
               </div>
             </div>

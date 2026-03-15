@@ -104,6 +104,7 @@ export default function MorningBrief({
   const fallbackHeadline = buildFallbackHeadline(urgentCount, buyCount, watchCount, topMover);
   const isGenerating = briefGenerating;
   const hasAI = !!aiNarrative && aiNarrative.length > 10;
+  const hasLiveData = (liveSourcesOk ?? 0) > 0;
 
   return (
     <div className={cn(
@@ -128,10 +129,16 @@ export default function MorningBrief({
           {/* Meta row */}
           <div className="flex items-center gap-2.5 mb-3 flex-wrap">
             <span className="text-[10px] font-bold text-muted-foreground/50 tracking-widest uppercase">{todayShort}</span>
-            <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30 font-mono gap-1 py-0 h-4">
-              <Activity size={7} />
-              LIVE
-            </Badge>
+            {hasLiveData ? (
+              <Badge variant="outline" className="text-[9px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30 font-mono gap-1 py-0 h-4">
+                <Activity size={7} />
+                LIVE
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[9px] bg-slate-700/30 text-muted-foreground/50 border-slate-600/30 font-mono gap-1 py-0 h-4">
+                LOADING
+              </Badge>
+            )}
 
             {/* Market status */}
             <div className={cn(

@@ -154,11 +154,14 @@ export default function CrisisCorrelationTable({ conflictZones }: CrisisCorrelat
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-1">
         <BarChart2 size={12} className="text-amber-400/70" />
         <span className="text-xs font-bold text-slate-300 tracking-wider uppercase">Crisis-to-Market Correlations</span>
-        <span className="ml-auto text-[10px] text-muted-foreground/40">historical precedents · citable</span>
+        <span className="ml-auto text-[10px] text-muted-foreground/40">historical reference</span>
       </div>
+      <p className="text-[9px] text-muted-foreground/40 mb-3 pl-[20px]">
+        Static historical data — impact ranges from past events. "ACTIVE NOW" means a matching zone is live in your current feeds; actual current price impact may differ.
+      </p>
 
       <div className="space-y-2">
         {sorted.map((row, i) => {
@@ -222,7 +225,7 @@ export default function CrisisCorrelationTable({ conflictZones }: CrisisCorrelat
       </div>
 
       <p className="text-[9px] text-muted-foreground/30 mt-3 text-right">
-        Data sourced from EIA, USDA, Reuters historical, Drewry WCI · For client briefing use
+        Historical ranges from EIA, USDA, Reuters, Drewry WCI · Reference data only · Not a forecast · Verify before citing
       </p>
     </div>
   );
