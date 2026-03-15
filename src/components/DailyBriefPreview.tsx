@@ -11,6 +11,7 @@ import {
   Cpu,
   CalendarDays,
   MessageSquare,
+  Mail,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,66 @@ interface DailyBrief {
   completion_tokens: number | null;
 }
 
+type PersonaId = 'general' | 'trader' | 'agri' | 'logistics' | 'analyst';
+
+const PERSONA_META: Record<PersonaId, {
+  label: string;
+  subLabel: string;
+  accentColor: string;
+  accentClass: string;
+  borderClass: string;
+  sectors: string[];
+}> = {
+  general: {
+    label: 'Business Overview',
+    subLabel: 'Key impacts on UK operating costs and supply chains today.',
+    accentColor: '#94a3b8',
+    accentClass: 'text-slate-400',
+    borderClass: 'border-slate-600',
+    sectors: ['energy', 'fx', 'freight'],
+  },
+  trader: {
+    label: 'Commodity Trader',
+    subLabel: 'Review before the 07:00 standup. Energy, FX, and metals attribution below.',
+    accentColor: '#f87171',
+    accentClass: 'text-red-400',
+    borderClass: 'border-red-900',
+    sectors: ['energy', 'fx', 'metals'],
+  },
+  agri: {
+    label: 'Agri Buyer',
+    subLabel: 'Wheat, fertilizer input costs, and supply corridor status.',
+    accentColor: '#34d399',
+    accentClass: 'text-emerald-400',
+    borderClass: 'border-emerald-900',
+    sectors: ['agricultural', 'fertilizer', 'energy'],
+  },
+  logistics: {
+    label: 'Logistics Director',
+    subLabel: 'Red Sea status, rerouting signals, and freight rate context.',
+    accentColor: '#38bdf8',
+    accentClass: 'text-sky-400',
+    borderClass: 'border-sky-900',
+    sectors: ['freight', 'energy', 'policy'],
+  },
+  analyst: {
+    label: 'Risk Analyst',
+    subLabel: 'All monitored sectors with citable context for client reporting.',
+    accentColor: '#fbbf24',
+    accentClass: 'text-amber-400',
+    borderClass: 'border-amber-900',
+    sectors: ['energy', 'agricultural', 'freight', 'fertilizer', 'metals', 'fx', 'policy'],
+  },
+};
+
+const PERSONA_FOCUS_LABEL: Record<PersonaId, string> = {
+  general: 'What This Means for Your Business',
+  trader: 'Trader Focus — Price Signals & Crisis Context',
+  agri: 'Agri Buyer Focus — Grain, Fertilizer & Black Sea',
+  logistics: 'Logistics Focus — Shipping Lanes & Bunker Costs',
+  analyst: 'Risk Analyst Focus — Full Sector Intelligence',
+};
+
 const SECTOR_LABELS: Record<string, string> = {
   energy: 'Energy',
   agricultural: 'Agricultural / Grain',
@@ -43,9 +104,7 @@ function SectorRow({ sector, text }: { sector: string; text: string }) {
   const isEmpty = !text || text.length < 5 || /no significant/i.test(text);
 
   return (
-    <div className={cn(
-      'flex items-start gap-3 py-2.5 border-b border-slate-800/60 last:border-0',
-    )}>
+    <div className="flex items-start gap-3 py-2.5 border-b border-slate-800/60 last:border-0">
       <div className="w-28 shrink-0 pt-0.5">
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
       </div>
@@ -56,7 +115,7 @@ function SectorRow({ sector, text }: { sector: string; text: string }) {
         {text || 'No data'}
       </p>
       {isEmpty ? (
-        <span className="shrink-0 w-2 h-2 rounded-full bg-slate-700 mt-1" title="No significant movement" />
+        <span className="shrink-0 w-2 h-2 rounded-full bg-slate-700 mt-1" />
       ) : (
         <CheckCircle size={11} className="shrink-0 text-emerald-500/60 mt-1" />
       )}
@@ -64,12 +123,15 @@ function SectorRow({ sector, text }: { sector: string; text: string }) {
   );
 }
 
+const PERSONAS: PersonaId[] = ['general', 'trader', 'agri', 'logistics', 'analyst'];
+
 export default function DailyBriefPreview() {
   const [brief, setBrief] = useState<DailyBrief | null>(null);
   const [loading, setLoading] = useState(true);
   const [rationalOpen, setRationalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [persona, setPersona] = useState<PersonaId>('general');
 
   const fetchDates = useCallback(async () => {
     const { data } = await supabase
@@ -99,6 +161,11 @@ export default function DailyBriefPreview() {
 
   const generatedAt = brief ? new Date(brief.generated_at) : null;
   const totalTokens = brief ? (brief.prompt_tokens ?? 0) + (brief.completion_tokens ?? 0) : 0;
+  const meta = PERSONA_META[persona];
+
+  const personaSectors = persona === 'analyst'
+    ? Object.keys(brief?.action_rationale ?? {})
+    : meta.sectors;
 
   return (
     <div>
@@ -116,24 +183,46 @@ export default function DailyBriefPreview() {
         </button>
       </div>
 
-      {availableDates.length > 1 && (
-        <div className="flex items-center gap-2 mb-4">
-          <CalendarDays size={11} className="text-slate-500 shrink-0" />
-          <select
-            value={selectedDate}
-            onChange={e => setSelectedDate(e.target.value)}
-            className="text-[11px] font-mono bg-slate-800/60 border border-slate-700/60 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-sky-500/50"
-          >
-            {availableDates.map(d => (
-              <option key={d} value={d}>
-                {new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', {
-                  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-                })}
-              </option>
-            ))}
-          </select>
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        {availableDates.length > 1 && (
+          <div className="flex items-center gap-2">
+            <CalendarDays size={11} className="text-slate-500 shrink-0" />
+            <select
+              value={selectedDate}
+              onChange={e => setSelectedDate(e.target.value)}
+              className="text-[11px] font-mono bg-slate-800/60 border border-slate-700/60 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-sky-500/50"
+            >
+              {availableDates.map(d => (
+                <option key={d} value={d}>
+                  {new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', {
+                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+                  })}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="flex items-center gap-1.5">
+          <Mail size={11} className="text-slate-500 shrink-0" />
+          <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mr-1">Edition:</span>
+          {PERSONAS.map(p => (
+            <button
+              key={p}
+              onClick={() => setPersona(p)}
+              className={cn(
+                'text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all',
+                persona === p
+                  ? 'border-current bg-slate-800'
+                  : 'border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-600'
+              )}
+              style={persona === p ? { color: PERSONA_META[p].accentColor, borderColor: PERSONA_META[p].accentColor } : {}}
+            >
+              {PERSONA_META[p].label.split(' ')[0]}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-10 text-slate-500 text-sm">
@@ -147,24 +236,41 @@ export default function DailyBriefPreview() {
           <p className="text-[11px] text-slate-600">The overnight pipeline may not have run yet.</p>
         </div>
       ) : (
-        <div className="rounded-xl border border-slate-700/50 bg-slate-900/40 overflow-hidden">
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: meta.accentColor + '33' }}>
+
+          {/* Persona accent bar */}
+          <div className="h-0.5" style={{ background: meta.accentColor }} />
 
           {/* Brief header */}
-          <div className="border-b border-slate-800/80 px-5 py-4 flex items-start gap-3 justify-between flex-wrap bg-slate-900/60">
+          <div className="px-5 py-4 border-b border-slate-800/80 flex items-start gap-3 justify-between flex-wrap bg-slate-900/80">
             <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Morning Brief</p>
-              <h3 className="text-base font-bold text-slate-100">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Procurement Intelligence</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-bold text-slate-100">Morning Brief</h3>
+                {persona !== 'general' && (
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-slate-900"
+                    style={{ background: meta.accentColor }}
+                  >
+                    {meta.label}
+                  </span>
+                )}
+              </div>
+              <p className="text-[12px] text-slate-500 mt-0.5">
                 {new Date(brief.brief_date + 'T12:00:00Z').toLocaleDateString('en-GB', {
                   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
                 })}
-              </h3>
+              </p>
               {generatedAt && (
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Generated at {generatedAt.toLocaleTimeString('en-GB', { hour12: false })} UTC
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  Generated {generatedAt.toLocaleTimeString('en-GB', { hour12: false })} UTC
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                LIVE DATA
+              </span>
               {brief.model && brief.model !== 'none' && (
                 <span className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 bg-slate-800/60 border border-slate-700/40 px-2 py-1 rounded-lg">
                   <Cpu size={9} />
@@ -181,11 +287,14 @@ export default function DailyBriefPreview() {
           </div>
 
           {/* Narrative */}
-          <div className="px-5 py-4 border-b border-slate-800/60">
+          <div className="px-5 py-4 border-b border-slate-800/60 bg-slate-900/40">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Headline Narrative</p>
             <p className="text-[14px] text-slate-200 leading-relaxed font-medium">{brief.narrative}</p>
             {brief.geopolitical_context && (
-              <p className="text-[12px] text-slate-400 mt-3 leading-relaxed pl-3 border-l-2 border-slate-700">
+              <p
+                className="text-[12px] text-slate-400 mt-3 leading-relaxed pl-3 border-l-2"
+                style={{ borderColor: meta.accentColor + '55' }}
+              >
                 {brief.geopolitical_context}
               </p>
             )}
@@ -193,12 +302,12 @@ export default function DailyBriefPreview() {
 
           {/* Three things */}
           {brief.three_things?.length > 0 && (
-            <div className="px-5 py-4 border-b border-slate-800/60">
+            <div className="px-5 py-4 border-b border-slate-800/60 bg-slate-900/40">
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">3 Things That Matter Today</p>
-              <div className="space-y-2">
+              <div className="space-y-2 bg-slate-950/60 border border-slate-800 rounded-lg p-3">
                 {brief.three_things.map((thing, i) => (
                   <div key={i} className="flex items-start gap-2.5">
-                    <span className="shrink-0 w-5 h-5 rounded-full bg-sky-500/20 border border-sky-500/30 text-sky-400 text-[10px] font-bold flex items-center justify-center mt-0.5">
+                    <span className="shrink-0 w-5 h-5 rounded-full bg-sky-500 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
                       {i + 1}
                     </span>
                     <p className="text-[13px] text-slate-300 leading-relaxed">{thing}</p>
@@ -208,15 +317,34 @@ export default function DailyBriefPreview() {
             </div>
           )}
 
-          {/* Action rationale (collapsible) */}
-          {brief.action_rationale && Object.keys(brief.action_rationale).length > 0 && (
+          {/* Persona focus section */}
+          {personaSectors.length > 0 && brief.action_rationale && (
+            <div className="px-5 py-4 border-b border-slate-800/60 bg-slate-900/40">
+              <p
+                className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                style={{ color: meta.accentColor }}
+              >
+                {PERSONA_FOCUS_LABEL[persona]}
+              </p>
+              <p className="text-[11px] text-slate-600 mb-3">{meta.subLabel}</p>
+              <div className="border border-slate-800 rounded-lg overflow-hidden">
+                {personaSectors.map(sector => {
+                  const text = brief.action_rationale[sector] ?? '';
+                  return <SectorRow key={sector} sector={sector} text={text} />;
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Full sector rationale (collapsible, analyst-style all sectors) */}
+          {persona !== 'analyst' && brief.action_rationale && Object.keys(brief.action_rationale).length > 0 && (
             <div className="border-b border-slate-800/60">
               <button
                 className="w-full flex items-center gap-2 px-5 py-3 text-left hover:bg-slate-800/20 transition-colors"
                 onClick={() => setRationalOpen(o => !o)}
               >
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex-1">
-                  Sector Rationale
+                  All Sector Rationale
                 </p>
                 <span className="text-[10px] text-slate-600">
                   {Object.keys(brief.action_rationale).length} sectors
@@ -237,7 +365,7 @@ export default function DailyBriefPreview() {
 
           {/* Token breakdown */}
           {(brief.prompt_tokens || brief.completion_tokens) ? (
-            <div className="px-5 py-3 flex items-center gap-4 flex-wrap">
+            <div className="px-5 py-3 flex items-center gap-4 flex-wrap bg-slate-900/20">
               <span className="text-[10px] font-mono text-slate-600">
                 Prompt: {(brief.prompt_tokens ?? 0).toLocaleString()} tokens
               </span>
