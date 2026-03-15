@@ -370,6 +370,8 @@ export default function DailyBriefPreview() {
               {brief.model && brief.model !== 'none' && (
                 <span className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400 bg-slate-800/60 border border-slate-700/40 px-2 py-1 rounded-lg">
                   <Cpu size={9} />
+                  <span className="text-sky-400/80">AI</span>
+                  <span className="text-slate-600">·</span>
                   {brief.model}
                 </span>
               )}
