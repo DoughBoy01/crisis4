@@ -244,7 +244,7 @@ export default function MorningBrief({
                 <span className="text-muted-foreground/25">·</span>
                 <div className="flex items-center gap-1 text-[10px] text-sky-500/40">
                   <Sparkles size={7} />
-                  <span>AI · {dailyBrief.model}</span>
+                  <span>DawnSignal Data Scout</span>
                 </div>
               </>
             )}
