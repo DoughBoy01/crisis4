@@ -1,9 +1,11 @@
-import { ExternalLink, Newspaper, RefreshCw, WifiOff } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, Newspaper, RefreshCw, WifiOff, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { FeedPayload } from "@/hooks/useMarketFeeds";
 import { formatAgeLabel, getAgeMinutes } from "@/hooks/useMarketFeeds";
+import type { DismissedIntelRecord } from "@/hooks/useDismissedIntel";
 
 interface LiveNewsFeedProps {
   feeds: FeedPayload | null;
@@ -11,6 +13,12 @@ interface LiveNewsFeedProps {
   error: string | null;
   onRefresh: () => void;
   timezone?: string;
+  isAdmin?: boolean;
+  dismissedStoryIds?: string[];
+  dismissedStories?: DismissedIntelRecord[];
+  onDismissStory?: (refId: string, title: string) => Promise<void>;
+  onUndismissStory?: (id: string) => Promise<void>;
+  isDismissed?: (type: 'scout_topic' | 'news_story', refId: string) => boolean;
 }
 
 const NEWS_SOURCES = [
@@ -165,6 +173,10 @@ interface NewsItem {
   relevanceScore: number;
 }
 
+function storyRefId(item: NewsItem): string {
+  return item.link || normaliseTitle(item.title);
+}
+
 function getItems(feeds: FeedPayload | null): NewsItem[] {
   if (!feeds) return [];
   const items: NewsItem[] = [];
@@ -217,8 +229,191 @@ function getFreightosWarning(feeds: FeedPayload | null) {
   return src;
 }
 
-export default function LiveNewsFeed({ feeds, loading, error, onRefresh, timezone = "Europe/London" }: LiveNewsFeedProps) {
-  const items = getItems(feeds);
+interface NewsRowProps {
+  item: NewsItem;
+  timezone: string;
+  isAdmin: boolean;
+  refId: string;
+  dismissedRecord?: DismissedIntelRecord;
+  onDismiss?: () => Promise<void>;
+  onUndismiss?: () => Promise<void>;
+}
+
+function NewsRow({ item, timezone, isAdmin, refId, dismissedRecord, onDismiss, onUndismiss }: NewsRowProps) {
+  const [confirming, setConfirming] = useState(false);
+  const [working, setWorking] = useState(false);
+  const isDismissed = !!dismissedRecord;
+  const { relative, absolute } = formatPublished(item.published, timezone);
+
+  const handleDismissClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setConfirming(true);
+  };
+
+  const handleConfirm = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!onDismiss) return;
+    setWorking(true);
+    await onDismiss();
+    setWorking(false);
+    setConfirming(false);
+  };
+
+  const handleCancel = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setConfirming(false);
+  };
+
+  const handleUndismiss = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!onUndismiss || !dismissedRecord) return;
+    setWorking(true);
+    await onUndismiss();
+    setWorking(false);
+  };
+
+  if (isDismissed) {
+    return (
+      <div className="py-2.5 first:pt-0 flex items-center gap-2.5 opacity-40">
+        <Badge
+          variant="outline"
+          className={cn(
+            "text-[10px] shrink-0 px-1.5 py-0.5 font-medium",
+            sourceColors[item.sourceName] ?? "bg-slate-500/15 text-slate-300 border-slate-500/30"
+          )}
+        >
+          {sourceShortNames[item.sourceName] ?? item.sourceName}
+        </Badge>
+        <span className="text-xs text-slate-500 flex-1 min-w-0 truncate line-through">{item.title}</span>
+        <span className="text-[9px] text-slate-600 uppercase tracking-wider shrink-0">removed</span>
+        {isAdmin && onUndismiss && (
+          <button
+            onClick={handleUndismiss}
+            disabled={working}
+            className="shrink-0 flex items-center gap-1 text-[9px] text-slate-500 hover:text-sky-400 transition-colors px-1.5 py-0.5 rounded border border-slate-700/40 hover:border-sky-500/30"
+          >
+            <RotateCcw size={9} className={working ? 'animate-spin' : ''} />
+            Restore
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn(
+      "py-3 first:pt-0",
+      confirming && "rounded-lg bg-red-950/10 px-2 -mx-2"
+    )}>
+      <div className="flex items-start gap-2.5">
+        <Badge
+          variant="outline"
+          className={cn(
+            "text-[10px] shrink-0 mt-0.5 px-1.5 py-0.5 font-medium",
+            sourceColors[item.sourceName] ?? "bg-slate-500/15 text-slate-300 border-slate-500/30"
+          )}
+        >
+          {sourceShortNames[item.sourceName] ?? item.sourceName}
+        </Badge>
+        <div className="flex-1 min-w-0">
+          <a
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-slate-200 hover:text-sky-400 transition-colors leading-snug flex items-start gap-1.5 group"
+          >
+            <span className="flex-1">{item.title}</span>
+            <ExternalLink size={11} className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </a>
+          {item.summary && (
+            <p className="text-xs text-muted-foreground leading-relaxed mt-0.5 line-clamp-2">{item.summary}</p>
+          )}
+          <div className="flex items-center gap-3 mt-1">
+            {relative && (
+              <span
+                className="text-[10px] text-muted-foreground/60 cursor-help"
+                title={absolute}
+              >
+                {relative}
+              </span>
+            )}
+            {item.accuracyScore > 0 && (
+              <span className={cn(
+                "text-[10px]",
+                item.accuracyScore >= 80 ? "text-emerald-500/50" :
+                item.accuracyScore >= 50 ? "text-amber-500/50" : "text-orange-500/50"
+              )}>
+                {item.accuracyScore}% confidence
+              </span>
+            )}
+            {item.relevanceScore >= 6 && (
+              <span className="text-[10px] text-sky-500/60 font-medium">
+                high relevance
+              </span>
+            )}
+          </div>
+        </div>
+
+        {isAdmin && !confirming && (
+          <button
+            onClick={handleDismissClick}
+            className="shrink-0 flex items-center gap-1 text-[9px] text-slate-600 hover:text-red-400 transition-colors px-1.5 py-1 rounded border border-transparent hover:border-red-500/30 hover:bg-red-500/5 mt-0.5"
+            title="Remove this story"
+          >
+            <Trash2 size={11} />
+          </button>
+        )}
+
+        {isAdmin && confirming && (
+          <div className="shrink-0 flex items-center gap-1.5 mt-0.5" onClick={e => e.stopPropagation()}>
+            <span className="text-[9px] text-red-400 flex items-center gap-1">
+              <AlertTriangle size={9} />
+              Remove?
+            </span>
+            <button
+              onClick={handleConfirm}
+              disabled={working}
+              className="text-[9px] font-semibold px-2 py-0.5 rounded bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-colors"
+            >
+              {working ? '...' : 'Yes'}
+            </button>
+            <button
+              onClick={handleCancel}
+              className="text-[9px] px-2 py-0.5 rounded border border-slate-700/50 text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              No
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function LiveNewsFeed({
+  feeds,
+  loading,
+  error,
+  onRefresh,
+  timezone = "Europe/London",
+  isAdmin = false,
+  dismissedStoryIds = [],
+  dismissedStories = [],
+  onDismissStory,
+  onUndismissStory,
+}: LiveNewsFeedProps) {
+  const [showDismissed, setShowDismissed] = useState(false);
+
+  const allItems = getItems(feeds);
+  const dismissedSet = new Set(dismissedStoryIds);
+
+  const activeItems = allItems.filter(item => !dismissedSet.has(storyRefId(item)));
+  const dismissedItems = allItems.filter(item => dismissedSet.has(storyRefId(item)));
+
   const sourceStatuses = getSourceStatuses(feeds);
   const freightosWarning = getFreightosWarning(feeds);
 
@@ -228,9 +423,9 @@ export default function LiveNewsFeed({ feeds, loading, error, onRefresh, timezon
         <Newspaper size={15} className="text-sky-400" />
         <h2 className="text-sm font-bold text-slate-200 tracking-wide uppercase">Live Intelligence Feeds</h2>
         <div className="ml-auto flex items-center gap-2">
-          {items.length > 0 && (
+          {activeItems.length > 0 && (
             <span className="text-[10px] text-muted-foreground/50 hidden sm:inline font-mono">
-              {items.length} unique · ranked by relevance
+              {activeItems.length} unique · ranked by relevance
             </span>
           )}
           {feeds && (
@@ -304,70 +499,60 @@ export default function LiveNewsFeed({ feeds, loading, error, onRefresh, timezon
           </div>
         )}
 
-        {!loading && !error && items.length === 0 && feeds && (
+        {!loading && !error && activeItems.length === 0 && feeds && (
           <p className="text-xs text-muted-foreground py-4 text-center">
             No matching headlines found across monitored sources.
           </p>
         )}
 
-        {!loading && items.length > 0 && (
+        {!loading && activeItems.length > 0 && (
           <div className="space-y-0 divide-y divide-border">
-            {items.map((item, i) => {
-              const { relative, absolute } = formatPublished(item.published, timezone);
+            {activeItems.map((item, i) => {
+              const refId = storyRefId(item);
               return (
-                <div key={i} className="py-3 first:pt-0">
-                  <div className="flex items-start gap-2.5">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-[10px] shrink-0 mt-0.5 px-1.5 py-0.5 font-medium",
-                        sourceColors[item.sourceName] ?? "bg-slate-500/15 text-slate-300 border-slate-500/30"
-                      )}
-                    >
-                      {sourceShortNames[item.sourceName] ?? item.sourceName}
-                    </Badge>
-                    <div className="flex-1 min-w-0">
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-medium text-slate-200 hover:text-sky-400 transition-colors leading-snug flex items-start gap-1.5 group"
-                      >
-                        <span className="flex-1">{item.title}</span>
-                        <ExternalLink size={11} className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </a>
-                      {item.summary && (
-                        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5 line-clamp-2">{item.summary}</p>
-                      )}
-                      <div className="flex items-center gap-3 mt-1">
-                        {relative && (
-                          <span
-                            className="text-[10px] text-muted-foreground/60 cursor-help"
-                            title={absolute}
-                          >
-                            {relative}
-                          </span>
-                        )}
-                        {item.accuracyScore > 0 && (
-                          <span className={cn(
-                            "text-[10px]",
-                            item.accuracyScore >= 80 ? "text-emerald-500/50" :
-                            item.accuracyScore >= 50 ? "text-amber-500/50" : "text-orange-500/50"
-                          )}>
-                            {item.accuracyScore}% confidence
-                          </span>
-                        )}
-                        {item.relevanceScore >= 6 && (
-                          <span className="text-[10px] text-sky-500/60 font-medium">
-                            high relevance
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <NewsRow
+                  key={i}
+                  item={item}
+                  timezone={timezone}
+                  isAdmin={isAdmin}
+                  refId={refId}
+                  onDismiss={onDismissStory ? () => onDismissStory(refId, item.title) : undefined}
+                  onUndismiss={undefined}
+                />
               );
             })}
+          </div>
+        )}
+
+        {isAdmin && dismissedItems.length > 0 && (
+          <div className="pt-2 border-t border-slate-800/60">
+            <button
+              onClick={() => setShowDismissed(o => !o)}
+              className="text-[9px] text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1 border border-slate-700/40 rounded px-2 py-0.5 hover:border-slate-600/60 mb-2"
+            >
+              <Trash2 size={9} />
+              {dismissedItems.length} removed
+            </button>
+
+            {showDismissed && (
+              <div className="space-y-0 divide-y divide-border/30">
+                {dismissedItems.map((item, i) => {
+                  const refId = storyRefId(item);
+                  const record = dismissedStories.find(d => d.ref_id === refId);
+                  return (
+                    <NewsRow
+                      key={i}
+                      item={item}
+                      timezone={timezone}
+                      isAdmin={isAdmin}
+                      refId={refId}
+                      dismissedRecord={record}
+                      onUndismiss={onUndismissStory && record ? () => onUndismissStory(record.id) : undefined}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

@@ -65,6 +65,7 @@ function App() {
           await supabase.auth.signOut();
           setIsAdmin(false);
         } : undefined}
+        isAdmin={isAdmin}
       />
     );
   }

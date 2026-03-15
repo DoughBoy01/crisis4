@@ -153,9 +153,10 @@ interface DashboardProps {
   onOpenDiagnostics?: () => void;
   onAdminLogin?: () => void;
   onAdminSignOut?: () => void;
+  isAdmin?: boolean;
 }
 
-export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSignOut }: DashboardProps) {
+export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSignOut, isAdmin = false }: DashboardProps) {
   const [activeSector, setActiveSector] = useState<SectorId | null>(null);
   const [activePersona, setActivePersona] = useState<PersonaId>('general');
   const [conflictOpen, setConflictOpen] = useState(true);
@@ -179,7 +180,7 @@ export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSign
 
   const { context: historicalContext, loading: historicalLoading } = useHistoricalContext();
   const { run: scoutRun, loading: scoutLoading } = useScoutIntel();
-  const { dismissed } = useDismissedIntel();
+  const { dismissed, dismissStory, undismiss, isDismissed } = useDismissedIntel();
 
   const marketItems = useMemo(() => deriveMarketItems(feeds, historicalContext), [feeds, historicalContext]);
   const overnightStats = useMemo(() => deriveOvernightStats(feeds), [feeds]);
@@ -751,6 +752,12 @@ export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSign
               error={feedsError}
               onRefresh={refreshFeeds}
               timezone={timezone}
+              isAdmin={isAdmin}
+              dismissedStoryIds={dismissed.filter(d => d.type === 'news_story').map(d => d.ref_id)}
+              dismissedStories={dismissed.filter(d => d.type === 'news_story')}
+              onDismissStory={isAdmin ? dismissStory : undefined}
+              onUndismissStory={isAdmin ? undismiss : undefined}
+              isDismissed={isDismissed}
             />
           </CollapsibleSection>
         </div>

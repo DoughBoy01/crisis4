@@ -19,6 +19,7 @@ interface UseDismissedIntelReturn {
   dismissed: DismissedIntelRecord[];
   loading: boolean;
   dismissTopic: (topic: TopicIntelligence, runId: string, reason?: string) => Promise<void>;
+  dismissStory: (refId: string, title: string) => Promise<void>;
   undismiss: (id: string) => Promise<void>;
   isDismissed: (type: 'scout_topic' | 'news_story', refId: string) => boolean;
 }
@@ -65,6 +66,32 @@ export function useDismissedIntel(): UseDismissedIntelReturn {
     }
   }, []);
 
+  const dismissStory = useCallback(async (refId: string, title: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const record = {
+      type: 'news_story' as const,
+      ref_id: refId,
+      ref_label: title,
+      category: null,
+      signal: null,
+      reason: null,
+      dismissed_by: user.id,
+      scouting_run_id: null,
+    };
+
+    const { data, error } = await supabase
+      .from('dismissed_intel')
+      .insert(record)
+      .select()
+      .maybeSingle();
+
+    if (!error && data) {
+      setDismissed(prev => [data as DismissedIntelRecord, ...prev]);
+    }
+  }, []);
+
   const undismiss = useCallback(async (id: string) => {
     const { error } = await supabase
       .from('dismissed_intel')
@@ -80,5 +107,5 @@ export function useDismissedIntel(): UseDismissedIntelReturn {
     return dismissed.some(d => d.type === type && d.ref_id === refId);
   }, [dismissed]);
 
-  return { dismissed, loading, dismissTopic, undismiss, isDismissed };
+  return { dismissed, loading, dismissTopic, dismissStory, undismiss, isDismissed };
 }
