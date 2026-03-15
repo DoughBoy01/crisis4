@@ -18,6 +18,8 @@ import {
   Server,
   ArrowLeft,
   Radar,
+  Mail,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DevControlsPanel from './DevControlsPanel';
@@ -58,6 +60,17 @@ const INITIAL_SERVICES: ServiceResult[] = [
   { id: 'ft', name: 'Financial Times RSS', category: 'rss', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19836768', status: 'idle' },
 ];
 
+interface Subscriber {
+  id: string;
+  email: string;
+  name: string | null;
+  persona: string | null;
+  active: boolean;
+  confirmed: boolean;
+  created_at: string;
+  last_sent_at: string | null;
+}
+
 interface DiagnosticsPageProps {
   onBack: () => void;
   onHome: () => void;
@@ -69,7 +82,21 @@ export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps
   const [startedAt, setStartedAt] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [edgeFeedData, setEdgeFeedData] = useState<Record<string, unknown> | null>(null);
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [subscribersLoading, setSubscribersLoading] = useState(true);
   const { run: scoutRun, loading: scoutLoading } = useScoutIntel();
+
+  useEffect(() => {
+    (async () => {
+      setSubscribersLoading(true);
+      const { data } = await supabase
+        .from('email_subscriptions')
+        .select('id, email, name, persona, active, confirmed, created_at, last_sent_at')
+        .order('created_at', { ascending: false });
+      setSubscribers((data as Subscriber[]) ?? []);
+      setSubscribersLoading(false);
+    })();
+  }, []);
 
   const setServiceStatus = useCallback((id: string, patch: Partial<ServiceResult>) => {
     setServices(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
@@ -494,7 +521,7 @@ export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps
         </div>
 
         {/* Brief Accuracy Analysis */}
-        <div className="mt-8 pb-8">
+        <div className="mt-8">
           <div className="flex items-center gap-2 mb-4">
             <Activity size={13} className="text-sky-400" />
             <h2 className="text-xs font-bold text-slate-400 tracking-widest uppercase">Brief Accuracy Analysis</h2>
@@ -502,6 +529,33 @@ export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps
             <span className="text-[10px] text-slate-600">15 Mar 2026 · 08:45 UTC brief</span>
           </div>
           <BriefAccuracyPanel />
+        </div>
+
+        {/* Email Subscribers */}
+        <div className="mt-8 pb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Mail size={13} className="text-sky-400" />
+            <h2 className="text-xs font-bold text-slate-400 tracking-widest uppercase">Email Subscribers</h2>
+            <div className="flex-1 h-px bg-slate-800" />
+            {!subscribersLoading && (
+              <span className="text-[10px] font-mono text-slate-500">
+                {subscribers.filter(s => s.active).length} active · {subscribers.length} total
+              </span>
+            )}
+          </div>
+
+          {subscribersLoading ? (
+            <div className="flex items-center gap-2 text-slate-500 text-sm py-4">
+              <Loader size={13} className="animate-spin" />
+              Loading subscribers...
+            </div>
+          ) : subscribers.length === 0 ? (
+            <div className="rounded-xl border border-slate-700/50 bg-slate-900/40 p-6 text-center text-sm text-slate-500">
+              No subscribers yet.
+            </div>
+          ) : (
+            <SubscribersByCategory subscribers={subscribers} />
+          )}
         </div>
 
       </div>
@@ -530,6 +584,73 @@ function CategoryIcon({ category }: { category: ServiceResult['category'] }) {
   if (category === 'infrastructure') return <Zap size={11} className="text-slate-500" />;
   if (category === 'api') return <DollarSign size={11} className="text-slate-500" />;
   return <Rss size={11} className="text-slate-500" />;
+}
+
+const PERSONA_LABELS: Record<string, string> = {
+  procurement: 'Procurement Manager',
+  trader: 'Commodity Trader',
+  analyst: 'Supply Chain Analyst',
+  farmer: 'Farmer / Grower',
+  executive: 'Executive / C-Suite',
+};
+
+function SubscribersByCategory({ subscribers }: { subscribers: Subscriber[] }) {
+  const grouped = subscribers.reduce<Record<string, Subscriber[]>>((acc, sub) => {
+    const key = sub.persona ?? 'unset';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(sub);
+    return acc;
+  }, {});
+
+  const sortedKeys = Object.keys(grouped).sort((a, b) => grouped[b].length - grouped[a].length);
+
+  return (
+    <div className="space-y-4">
+      {sortedKeys.map(persona => {
+        const group = grouped[persona];
+        const activeCount = group.filter(s => s.active).length;
+        return (
+          <div key={persona} className="rounded-xl border border-slate-700/50 bg-slate-900/40 overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-800/60 bg-slate-900/60">
+              <Users size={13} className="text-sky-400 shrink-0" />
+              <span className="text-sm font-semibold text-slate-200">
+                {PERSONA_LABELS[persona] ?? persona.charAt(0).toUpperCase() + persona.slice(1)}
+              </span>
+              <span className="ml-auto flex items-center gap-3 text-[10px] font-mono text-slate-500">
+                <span className="text-emerald-400 font-semibold">{activeCount} active</span>
+                <span>{group.length} total</span>
+              </span>
+            </div>
+            <div className="divide-y divide-slate-800/40">
+              {group.map(sub => (
+                <div key={sub.id} className="flex items-center gap-3 px-4 py-2.5 text-xs">
+                  <div className={cn(
+                    'w-1.5 h-1.5 rounded-full shrink-0',
+                    sub.active ? 'bg-emerald-400' : 'bg-slate-600'
+                  )} />
+                  <span className="text-slate-300 font-mono truncate min-w-0 flex-1">{sub.email}</span>
+                  {sub.name && (
+                    <span className="text-slate-500 truncate hidden sm:block max-w-[140px]">{sub.name}</span>
+                  )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {sub.confirmed && (
+                      <span className="text-[9px] font-bold tracking-wider uppercase text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5">confirmed</span>
+                    )}
+                    {!sub.active && (
+                      <span className="text-[9px] font-bold tracking-wider uppercase text-slate-500 bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5">inactive</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-600 shrink-0 hidden md:block">
+                    {new Date(sub.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function ServiceRow({ service, expanded, onToggle, onRetest }: {
