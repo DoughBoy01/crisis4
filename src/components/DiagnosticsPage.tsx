@@ -17,11 +17,14 @@ import {
   Activity,
   Server,
   ArrowLeft,
+  Radar,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DevControlsPanel from './DevControlsPanel';
 import AgentRunHistory from './AgentRunHistory';
 import DailyBriefPreview from './DailyBriefPreview';
+import ScoutIntelPanel from './ScoutIntelPanel';
+import { useScoutIntel } from '@/hooks/useScoutIntel';
 
 interface ServiceResult {
   id: string;
@@ -65,6 +68,7 @@ export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps
   const [startedAt, setStartedAt] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [edgeFeedData, setEdgeFeedData] = useState<Record<string, unknown> | null>(null);
+  const { run: scoutRun, loading: scoutLoading } = useScoutIntel();
 
   const setServiceStatus = useCallback((id: string, patch: Partial<ServiceResult>) => {
     setServices(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
@@ -442,6 +446,34 @@ export default function DiagnosticsPage({ onBack, onHome }: DiagnosticsPageProps
         {/* Agent run history */}
         <div className="mt-8">
           <AgentRunHistory />
+        </div>
+
+        {/* Scout Intel */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Radar size={13} className="text-sky-400" />
+            <h2 className="text-xs font-bold text-slate-400 tracking-widest uppercase">Scout Intelligence</h2>
+            <div className="flex-1 h-px bg-slate-800" />
+            {scoutRun && (
+              <span className="text-[10px] font-mono text-slate-500">
+                {new Date(scoutRun.run_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                {scoutRun.duration_ms ? ` · ${(scoutRun.duration_ms / 1000).toFixed(0)}s` : ''}
+                {` · ${scoutRun.intelligence?.length ?? 0} topics`}
+              </span>
+            )}
+          </div>
+          {scoutRun && (
+            <div className="mb-3 rounded-lg border border-slate-700/50 bg-slate-900/40 px-4 py-3 flex flex-wrap gap-4 text-[11px] font-mono text-slate-400">
+              <span>Model: <span className="text-slate-200">{scoutRun.model}</span></span>
+              <span>Prompt tokens: <span className="text-slate-200">{scoutRun.total_prompt_tokens?.toLocaleString()}</span></span>
+              <span>Completion tokens: <span className="text-slate-200">{scoutRun.total_completion_tokens?.toLocaleString()}</span></span>
+              <span>Forced: <span className={scoutRun.forced ? 'text-amber-400' : 'text-slate-200'}>{scoutRun.forced ? 'yes' : 'no'}</span></span>
+              {scoutRun.error && <span className="text-red-400">Error: {scoutRun.error}</span>}
+            </div>
+          )}
+          <div className="rounded-xl border border-slate-700/50 bg-slate-900/40 p-4">
+            <ScoutIntelPanel run={scoutRun} loading={scoutLoading} />
+          </div>
         </div>
 
         {/* Daily brief preview */}
