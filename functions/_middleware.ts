@@ -105,13 +105,25 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
   // Skip auth for specific routes
   const url = new URL(request.url);
+
+  // Public routes that don't require authentication
   const publicRoutes = [
     '/api/auth/login',
     '/api/feed_cache/trigger',  // RSS feed fetcher
     '/api/feed_cache/connect',  // WebSocket upgrade
+    '/api/feed_cache',          // Feed cache retrieval
+    '/api/user_settings',        // Session-based settings (no auth required)
+    '/api/historical_context',   // Public historical data
+    '/api/scout_intel',          // Public intelligence data
+    '/api/dismissed_intel',      // Public dismissed items
+    '/api/daily_brief',          // Public daily brief
+    '/api/auth/me',              // Check auth status (returns null if not authed)
   ];
 
-  if (publicRoutes.includes(url.pathname)) {
+  // Check if the path matches any public route (with or without query params)
+  const isPublicRoute = publicRoutes.some(route => url.pathname === route || url.pathname.startsWith(route + '/'));
+
+  if (isPublicRoute) {
     const response = await next();
     response.headers.set('Access-Control-Allow-Origin', '*');
     return response;
