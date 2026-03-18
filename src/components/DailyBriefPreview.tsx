@@ -134,10 +134,15 @@ function SectorRow({ sector, text }: { sector: string; text: string }) {
 
 const PERSONAS: PersonaId[] = ['general', 'trader', 'agri', 'logistics', 'analyst'];
 
+// NOTE: Email preview requires Supabase Edge Function (send-morning-brief) which is not available in Cloudflare Pages deployment
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const EMAIL_PREVIEW_AVAILABLE = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 async function fetchEmailPreviewHtml(brief: DailyBrief, persona: PersonaId): Promise<string> {
+  if (!EMAIL_PREVIEW_AVAILABLE) {
+    throw new Error('Email preview not available - Supabase Edge Functions not configured');
+  }
   const res = await fetch(`${SUPABASE_URL}/functions/v1/send-morning-brief`, {
     method: 'POST',
     headers: {

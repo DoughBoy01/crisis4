@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { Play, CheckCircle, XCircle, Loader, ChevronDown, ChevronUp, Terminal, RefreshCw, Mail, Zap, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// NOTE: Pipeline controls require Supabase Edge Functions which are not available in Cloudflare Pages deployment
+// These features would need to be ported to Cloudflare Workers to function
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const PIPELINE_AVAILABLE = Boolean(SUPABASE_URL && ANON_KEY);
 
 interface StepLog {
   step: string;
@@ -25,6 +28,9 @@ interface PipelineResult {
 type RunStatus = 'idle' | 'running' | 'done' | 'error';
 
 async function callEdge(slug: string, body?: unknown): Promise<unknown> {
+  if (!PIPELINE_AVAILABLE) {
+    throw new Error('Pipeline controls not available - Supabase Edge Functions not configured');
+  }
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${slug}`, {
     method: 'POST',
     headers: {
@@ -174,34 +180,45 @@ export default function DevControlsPanel() {
 
       {open && (
         <div className="px-4 pb-4 pt-2 border-t border-amber-500/10 space-y-3">
-          <p className="text-[11px] text-amber-400/50">
-            Force-run pipeline steps without waiting for the cron schedule.
-          </p>
+          {!PIPELINE_AVAILABLE ? (
+            <div className="rounded-lg border border-slate-700/60 bg-slate-800/40 px-3 py-2.5">
+              <p className="text-[11px] text-slate-400">
+                Pipeline controls not available - Supabase Edge Functions not configured.
+              </p>
+              <p className="text-[10px] text-slate-500 mt-1">
+                To enable: Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env
+              </p>
+            </div>
+          ) : (
+            <p className="text-[11px] text-amber-400/50">
+              Force-run pipeline steps without waiting for the cron schedule.
+            </p>
+          )}
 
           <div className="flex flex-wrap gap-2">
             <ActionButton
               icon={<Search size={11} />}
               label="Run Scout"
-              disabled={isRunning}
+              disabled={isRunning || !PIPELINE_AVAILABLE}
               onClick={runScoutOnly}
             />
             <ActionButton
               icon={<RefreshCw size={11} />}
               label="Refresh Feeds"
-              disabled={isRunning}
+              disabled={isRunning || !PIPELINE_AVAILABLE}
               onClick={runFeedsOnly}
             />
             <ActionButton
               icon={<Zap size={11} />}
               label="Run Full Pipeline"
               primary
-              disabled={isRunning}
+              disabled={isRunning || !PIPELINE_AVAILABLE}
               onClick={runPipeline}
             />
             <ActionButton
               icon={<Mail size={11} />}
               label="Send Email Now"
-              disabled={isRunning}
+              disabled={isRunning || !PIPELINE_AVAILABLE}
               onClick={sendEmailOnly}
             />
           </div>

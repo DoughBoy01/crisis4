@@ -32,11 +32,10 @@ export interface DailyBriefState {
   trigger: (feeds: FeedPayload, persona: PersonaId) => void;
 }
 
-const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-brief`;
-const HEADERS = {
-  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-  "Content-Type": "application/json",
-};
+// Note: AI brief generation is currently disabled in the Cloudflare Pages version
+// The original Supabase Edge Function for ai-brief is not available
+// For now, we only return cached briefs from the database
+const BRIEF_API_URL = '/api/daily_brief';
 
 function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
@@ -78,17 +77,20 @@ export function useDailyBrief(persona: PersonaId): DailyBriefState {
 
     setGenerating(true);
     setError(null);
+
     try {
-      const res = await fetch(FUNCTION_URL, {
-        method: "POST",
-        headers: HEADERS,
-        body: JSON.stringify({ feeds, persona: triggerPersona }),
-      });
-      if (!res.ok) throw new Error(`ai-brief returned ${res.status}`);
-      const json = await res.json();
-      if (json.error) throw new Error(json.error);
-      setBrief(json.brief as DailyBrief);
-      setCached(json.cached === true);
+      // AI brief generation via OpenAI is not currently available in Cloudflare Pages deployment
+      // This would require porting the Supabase Edge Function logic to a Cloudflare Worker
+      // For now, we only return cached briefs from the database
+      console.warn('[useDailyBrief] AI brief generation not available - database-only mode');
+
+      const data = await fetchApiDailyBrief();
+      if (data && data.brief_date === todayUtc() && data.persona === triggerPersona) {
+        setBrief(data as DailyBrief);
+        setCached(true);
+      } else {
+        setError('No cached brief available for today. AI generation not yet implemented.');
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

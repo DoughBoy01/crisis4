@@ -71,6 +71,7 @@ const getWebSocketUrl = (): string => {
 
 const RECONNECT_DELAY_MS = 3000;
 const MAX_RECONNECT_DELAY_MS = 30000;
+const HTTP_FALLBACK_DELAY_MS = 5000; // Try HTTP if WebSocket fails for 5 seconds
 
 export function useMarketFeeds(): FeedState {
   const [data, setData] = useState<FeedPayload | null>(null);
@@ -85,9 +86,52 @@ export function useMarketFeeds(): FeedState {
   const reconnectDelayRef = useRef(RECONNECT_DELAY_MS);
   const lastFetchTimeRef = useRef<number | null>(null);
   const unmountedRef = useRef(false);
+  const httpFallbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const usingHttpFallbackRef = useRef(false);
+
+  // HTTP fallback for when WebSocket isn't available
+  const fetchViaHttp = useCallback(async () => {
+    if (unmountedRef.current) return;
+
+    try {
+      console.log('[useMarketFeeds] Using HTTP fallback to fetch data');
+      const response = await fetch('/api/feed_cache');
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const feedData = await response.json();
+
+      if (Array.isArray(feedData) && feedData.length > 0) {
+        const latestFeed = feedData[0];
+        if (latestFeed.payload) {
+          setData(latestFeed.payload);
+          setLastFetchedAt(latestFeed.fetched_at);
+          lastFetchTimeRef.current = Date.now();
+          setSecondsSinceRefresh(0);
+          setError(null);
+          setLoading(false);
+          usingHttpFallbackRef.current = true;
+        }
+      }
+    } catch (err) {
+      console.error('[useMarketFeeds] HTTP fallback failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+      setLoading(false);
+    }
+  }, [setData, setLastFetchedAt, setSecondsSinceRefresh, setError, setLoading]);
 
   const connect = useCallback(() => {
     if (unmountedRef.current) return;
+
+    // Start HTTP fallback timer - if WebSocket doesn't connect within 5 seconds, use HTTP
+    httpFallbackTimeoutRef.current = setTimeout(() => {
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        console.log('[useMarketFeeds] WebSocket failed to connect within 5s, triggering HTTP fallback');
+        fetchViaHttp();
+      }
+    }, HTTP_FALLBACK_DELAY_MS);
 
     try {
       const ws = new WebSocket(getWebSocketUrl());
@@ -98,6 +142,12 @@ export function useMarketFeeds(): FeedState {
         setError(null);
         setLoading(false);
         reconnectDelayRef.current = RECONNECT_DELAY_MS; // Reset backoff on successful connection
+
+        // Cancel HTTP fallback since WebSocket connected successfully
+        if (httpFallbackTimeoutRef.current) {
+          clearTimeout(httpFallbackTimeoutRef.current);
+          httpFallbackTimeoutRef.current = null;
+        }
       };
 
       ws.onmessage = (event) => {
@@ -142,7 +192,7 @@ export function useMarketFeeds(): FeedState {
       setError(err instanceof Error ? err.message : 'Failed to connect');
       setLoading(false);
     }
-  }, []);
+  }, [fetchViaHttp]);
 
   const refresh = useCallback(() => {
     // Send a ping to request fresh data (if needed)
@@ -160,6 +210,9 @@ export function useMarketFeeds(): FeedState {
       unmountedRef.current = true;
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (httpFallbackTimeoutRef.current) {
+        clearTimeout(httpFallbackTimeoutRef.current);
       }
       if (wsRef.current) {
         wsRef.current.close(1000, 'Component unmounted');

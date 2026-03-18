@@ -2,9 +2,15 @@ import { useState } from 'react';
 import { Mail, Check, Loader2, X, Bell, TrendingUp, ShoppingBasket, Ship, BarChart2, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const SUBSCRIBE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-morning-brief`;
+// NOTE: Email subscription requires Supabase Edge Function (send-morning-brief) which is not available in Cloudflare Pages deployment
+// This would need to be ported to Cloudflare Workers + Email Workers/Resend integration to function
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUBSCRIBE_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/send-morning-brief` : '';
+const SUBSCRIPTION_AVAILABLE = Boolean(SUBSCRIBE_URL && SUPABASE_ANON_KEY);
+
 const HEADERS = {
-  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
   'Content-Type': 'application/json',
 };
 
@@ -74,6 +80,12 @@ export default function EmailSubscribe({ variant = 'header' }: EmailSubscribePro
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim()) return;
+
+    if (!SUBSCRIPTION_AVAILABLE) {
+      setState('error');
+      setMessage('Email subscription not available - Supabase Edge Functions not configured');
+      return;
+    }
 
     setState('loading');
     setMessage('');
