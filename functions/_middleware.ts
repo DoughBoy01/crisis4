@@ -103,9 +103,15 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     });
   }
 
-  // Skip auth for login route
+  // Skip auth for specific routes
   const url = new URL(request.url);
-  if (url.pathname === '/api/auth/login') {
+  const publicRoutes = [
+    '/api/auth/login',
+    '/api/feed_cache/trigger',  // RSS feed fetcher
+    '/api/feed_cache/connect',  // WebSocket upgrade
+  ];
+
+  if (publicRoutes.includes(url.pathname)) {
     const response = await next();
     response.headers.set('Access-Control-Allow-Origin', '*');
     return response;
