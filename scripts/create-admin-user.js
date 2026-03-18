@@ -11,8 +11,8 @@
  *   node scripts/create-admin-user.js mySecurePassword123
  */
 
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const password = process.argv[2];
 
