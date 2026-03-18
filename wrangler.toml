@@ -1,0 +1,16 @@
+name = "crisis2"
+compatibility_date = "2025-03-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "crisis2-db"
+database_id = "c3bdf315-1aca-46a5-a0fd-0f3aefced92a"
+
+# Durable Object Binding
+[[durable_objects.bindings]]
+name = "MARKET_FEED_ROOM"
+class_name = "MarketFeedRoom"
+script_name = "crisis2-durable-objects"

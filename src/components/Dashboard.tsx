@@ -25,8 +25,7 @@ import { useMarketFeeds, getBrentFromFeeds, getFxFromFeeds } from '@/hooks/useMa
 import { useDailyBrief } from '@/hooks/useDailyBrief';
 import { useUserSettings } from '@/hooks/useUserSettings';
 import { useHistoricalContext } from '@/hooks/useHistoricalContext';
-import { useDeleteStory } from '@/hooks/useDeleteStory';
-import { ChevronDown, ChevronUp, Shield, BarChart2, Newspaper, Filter, Ship, Clock, TrendingUp, Radar } from 'lucide-react';
+import { ChevronDown, ChevronUp, Shield, BarChart2, Newspaper, Filter, Ship, Clock, Radar } from 'lucide-react';
 import CommodityMiniChart from './CommodityMiniChart';
 import ScoutIntelPanel from './ScoutIntelPanel';
 import { useScoutIntel } from '@/hooks/useScoutIntel';
@@ -160,9 +159,7 @@ interface DashboardProps {
 export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSignOut, isAdmin = false }: DashboardProps) {
   const [activeSector, setActiveSector] = useState<SectorId | null>(null);
   const [activePersona, setActivePersona] = useState<PersonaId>('general');
-  const [conflictOpen, setConflictOpen] = useState(true);
   const [newsOpen, setNewsOpen] = useState(false);
-  const [marketsOpen, setMarketsOpen] = useState(true);
   const [shippingOpen, setShippingOpen] = useState(true);
   const [timelineOpen, setTimelineOpen] = useState(activePersona !== 'general');
   const [correlationOpen, setCorrelationOpen] = useState(false);
@@ -182,14 +179,19 @@ export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSign
   const { context: historicalContext, loading: historicalLoading } = useHistoricalContext();
   const { run: scoutRun, loading: scoutLoading } = useScoutIntel();
   const { dismissed, dismissStory, undismiss, isDismissed } = useDismissedIntel();
-  const { deleteStory } = useDeleteStory();
 
-  const handleAdminDeleteStory = useCallback(async (titleOrRefId: string, explicitTitle?: string) => {
-    const title = explicitTitle ?? titleOrRefId;
-    await deleteStory(title);
-    await dismissStory(title, title);
+  // Handler for LiveNewsFeed: receives (refId, title)
+  const handleAdminDeleteStory = useCallback(async (refId: string, title: string) => {
+    await dismissStory(refId, title);
     refreshFeeds();
-  }, [deleteStory, dismissStory, refreshFeeds]);
+  }, [dismissStory, refreshFeeds]);
+
+  // Handler for AlertBanner: receives only (title)
+  const handleAdminDismissAlert = useCallback((title: string) => {
+    // Use title as both refId and title since we don't have the refId
+    dismissStory(title, title);
+    refreshFeeds();
+  }, [dismissStory, refreshFeeds]);
 
   const marketItems = useMemo(() => deriveMarketItems(feeds, historicalContext), [feeds, historicalContext]);
   const overnightStats = useMemo(() => deriveOvernightStats(feeds), [feeds]);
@@ -348,8 +350,6 @@ export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSign
       .flatMap(s => s.items ?? []).length;
   }, [feeds]);
 
-  const criticalAlerts = filteredAlerts.filter(a => a.severity === 'critical');
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header
@@ -458,7 +458,7 @@ export default function Dashboard({ onOpenDiagnostics, onAdminLogin, onAdminSign
                       alerts={filteredAlerts}
                       timezone={timezone}
                       isAdmin={isAdmin}
-                      onDismissAlert={isAdmin ? handleAdminDeleteStory : undefined}
+                      onDismissAlert={isAdmin ? handleAdminDismissAlert : undefined}
                       isDismissed={isDismissed}
                     />
                   ) : (
