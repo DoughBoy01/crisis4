@@ -18,7 +18,7 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_classes": ["MarketFeedRoom"]
+      "new_sqlite_classes": ["MarketFeedRoom"]
     }
   ],
 

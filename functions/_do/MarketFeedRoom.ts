@@ -1,5 +1,22 @@
 import type { Env } from '../types';
 
+/**
+ * ES Module Default Export - Worker Entry Point
+ * Handles incoming requests and routes to Durable Object instances
+ */
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    // Route all requests to the MarketFeedRoom Durable Object
+    const id = env.MARKET_FEED_ROOM.idFromName('global_market_feed');
+    const stub = env.MARKET_FEED_ROOM.get(id);
+    return stub.fetch(request);
+  }
+};
+
+/**
+ * MarketFeedRoom Durable Object
+ * Manages WebSocket connections for real-time market feed updates
+ */
 export class MarketFeedRoom {
   state: DurableObjectState;
   env: Env;
