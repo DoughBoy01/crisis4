@@ -21,6 +21,11 @@ dist-ssr
 *.sln
 *.sw?
 .env
+.dev.vars
 
 # Admin credentials (sensitive)
 ADMIN-CREDENTIALS.md
+
+# Wrangler local data
+.wrangler/
+.mf/

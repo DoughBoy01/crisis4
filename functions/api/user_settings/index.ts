@@ -9,9 +9,13 @@ interface User {
 
 export const onRequestGet: PagesFunction<Env, any, { user: User }> = async ({ env, data }) => {
   try {
-    // The user context is guaranteed to exist because of _middleware.ts
-    // For user_settings, the session_id represents the user identifier
-    const sessionId = data.user.id;
+    const sessionId = data.user?.id;
+    if (!sessionId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     const { results } = await env.DB.prepare(
       'SELECT * FROM user_settings WHERE session_id = ?'

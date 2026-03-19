@@ -5,10 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "npm run build && wrangler pages dev dist --live-reload",
+    "dev:functions": "wrangler pages dev dist --port 8788",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "db:local:init": "wrangler d1 execute crisis2-db --local --file=./schemas/0001_initial_schema.sql && wrangler d1 execute crisis2-db --local --file=./schemas/0002_users_table.sql",
+    "db:local:create-admin": "node scripts/create-admin-user.js",
+    "db:local:shell": "wrangler d1 execute crisis2-db --local --command",
+    "db:remote:shell": "wrangler d1 execute crisis2-db --remote --command",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name crisis2 --branch main"
   },
   "dependencies": {
     "@radix-ui/react-scroll-area": "^1.2.10",

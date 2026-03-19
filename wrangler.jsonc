@@ -6,12 +6,26 @@
 		"nodejs_compat"
 	],
 	"pages_build_output_dir": "dist",
+	// D1 Database Configuration
+	// For local dev: wrangler uses local SQLite database automatically
+	// For remote: use --remote flag or set remote: true
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "crisis2-db",
-			"database_id": "c3bdf315-1aca-46a5-a0fd-0f3aefced92a",
-			"remote": true
+			"database_id": "c3bdf315-1aca-46a5-a0fd-0f3aefced92a"
+			// Note: Removed "remote": true to enable local development by default
+			// Use --remote flag for production database access
 		}
-	]
+	],
+	// Durable Objects for WebSocket support (production only)
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "MARKET_FEED_ROOM",
+				"class_name": "MarketFeedRoom",
+				"script_name": "crisis2-durable-objects"
+			}
+		]
+	}
 }

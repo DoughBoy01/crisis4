@@ -103,7 +103,6 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     });
   }
 
-  // Skip auth for specific routes
   const url = new URL(request.url);
 
   // Public routes that don't require authentication
@@ -112,7 +111,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     '/api/feed_cache/trigger',  // RSS feed fetcher
     '/api/feed_cache/connect',  // WebSocket upgrade
     '/api/feed_cache',          // Feed cache retrieval
-    '/api/user_settings',        // Session-based settings (no auth required)
+    '/api/user_settings',        // Session-based settings
     '/api/historical_context',   // Public historical data
     '/api/scout_intel',          // Public intelligence data
     '/api/dismissed_intel',      // Public dismissed items
@@ -120,20 +119,15 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     '/api/auth/me',              // Check auth status (returns null if not authed)
   ];
 
-  // Check if the path matches any public route (with or without query params)
   const isPublicRoute = publicRoutes.some(route => url.pathname === route || url.pathname.startsWith(route + '/'));
 
-  if (isPublicRoute) {
-    const response = await next();
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    return response;
-  }
-
-  // Only validate auth for /api/* routes
+  // For all /api/* routes: try to extract and validate the JWT.
+  // Attach data.user if valid — regardless of whether the route is public or protected.
+  // This ensures public routes like /api/auth/me and /api/user_settings receive the
+  // authenticated user context when a valid session cookie or Bearer token is present.
   if (url.pathname.startsWith('/api/')) {
-    // Check for token in Authorization header or Cookie
     let token = '';
-      
+
     const authHeader = request.headers.get('Authorization');
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
@@ -147,32 +141,29 @@ export const onRequest: PagesFunction<Env> = async (context) => {
           })
         );
         if (cookies['session_token']) {
-           token = cookies['session_token'];
+          token = cookies['session_token'];
         }
       }
     }
 
-    if (!token) {
+    if (token) {
+      const payload = await verifyJwt(token, env.JWT_SECRET);
+      if (payload) {
+        context.data.user = { id: payload.sub, role: payload.role };
+      }
+    }
+
+    // Protected routes: block if no valid user was attached
+    if (!isPublicRoute && !context.data.user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
       });
     }
-
-    const payload = await verifyJwt(token, env.JWT_SECRET);
-    if (!payload) {
-       return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-      });
-    }
-
-    // Attach user to context for downstream functions
-    context.data.user = { id: payload.sub, role: payload.role };
   }
 
   const response = await next();
-  
+
   // Add CORS headers to final response
   response.headers.set('Access-Control-Allow-Origin', '*');
   return response;
