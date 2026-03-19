@@ -34,6 +34,21 @@ npx wrangler d1 execute crisis2-db --local --command="INSERT INTO users (...)"
 - Email: `admin@example.com`
 - Password: `LocalAdmin123`
 
+### 3.5. Configure Environment Variables (Optional)
+
+Edit `.dev.vars` to add optional API keys:
+
+```bash
+# Optional: EIA API for Brent Crude Oil prices
+# Get free key from https://www.eia.gov/opendata/register.php
+EIA_API_KEY=your_key_here
+
+# Other optional keys already in .dev.vars
+JWT_SECRET=local-dev-secret-change-me-in-production
+```
+
+**Note**: Without `EIA_API_KEY`, you'll still get 11/12 data sources (Stooq market data + 9 RSS feeds work without keys).
+
 ### 4. Start Development Server
 ```bash
 # Option 1: Frontend only (React dev server)
@@ -113,6 +128,10 @@ JWT_SECRET=local-dev-secret-change-me
 # VITE_SUPABASE_URL=
 # VITE_SUPABASE_ANON_KEY=
 
+# Optional: EIA API for Brent Crude Oil spot prices
+# Get free key from https://www.eia.gov/opendata/register.php
+EIA_API_KEY=your_key_here
+
 # Optional: OpenAI (for AI brief generation)
 # OPENAI_API_KEY=
 ```
@@ -126,6 +145,9 @@ Set secrets via Cloudflare dashboard or wrangler:
 ```bash
 # Set JWT secret
 echo "your-production-secret" | npx wrangler pages secret put JWT_SECRET --project-name crisis2
+
+# Set EIA API key (for Brent Crude Oil data)
+echo "your-eia-api-key" | npx wrangler pages secret put EIA_API_KEY --project-name crisis2
 
 # List all secrets
 npx wrangler pages secret list --project-name crisis2
@@ -182,22 +204,61 @@ curl -X POST http://localhost:8788/api/auth/login \
 # {"user":{"id":"...","email":"admin@example.com","role":"admin"}}
 ```
 
-### Adding Sample Data
+### Testing Market Data Fetching
 
+The platform now fetches **12 comprehensive data sources** including:
+- 22 market tickers (commodities, FX, indices) via Stooq
+- EIA Brent Crude Oil spot prices (requires API key)
+- ExchangeRate.host FX rates
+- 9 RSS feeds with keyword filtering
+
+**Trigger data fetch**:
 ```bash
-# Insert feed cache data
-npx wrangler d1 execute crisis2-db --local --command="
-INSERT INTO feed_cache (id, fetched_at, payload, created_at)
-VALUES (
-  'test-feed-1',
-  datetime('now'),
-  '{\"fetched_at\":\"2026-03-18T12:00:00Z\",\"sources\":[]}',
-  datetime('now')
-);"
+# Start full stack dev server
+npm run dev:full
 
-# Verify
-npx wrangler d1 execute crisis2-db --local --command="SELECT * FROM feed_cache;"
+# In another terminal, trigger data fetch
+curl -X POST http://localhost:8788/api/feed_cache/trigger
+
+# Expected response:
+# {
+#   "success": true,
+#   "id": "uuid-here",
+#   "sources_ok": 11,  // 12 if EIA_API_KEY is set
+#   "sources_total": 12,
+#   "overall_accuracy_score": 95
+# }
 ```
+
+**View cached data**:
+```bash
+# Get latest feed data
+curl http://localhost:8788/api/feed_cache
+
+# Check database
+npx wrangler d1 execute crisis2-db --local \
+  --command="SELECT id, fetched_at,
+             json_extract(payload, '$.overall_accuracy_score') as accuracy,
+             json_extract(payload, '$.sources_ok') as sources_ok
+             FROM feed_cache
+             ORDER BY created_at DESC
+             LIMIT 1;"
+```
+
+**View specific data sources**:
+```bash
+# Example: Check Yahoo Finance quotes
+npx wrangler d1 execute crisis2-db --local \
+  --command="SELECT
+    json_extract(payload, '$.sources[0].source_name') as source,
+    json_extract(payload, '$.sources[0].quotes_count') as quotes_count,
+    json_extract(payload, '$.sources[0].accuracy_score') as accuracy
+  FROM feed_cache
+  ORDER BY created_at DESC
+  LIMIT 1;"
+```
+
+For comprehensive data source documentation, see [DATA-SOURCES.md](DATA-SOURCES.md).
 
 ---
 
